@@ -6,7 +6,9 @@ import App from "./App";
 import "./style.css";
 import "./fonts.css";
 import "./royal.css";
+import "./studio.css";
 import "./motion.css";
+import "./navigation.css";
 async function mountStorefront() {
   const initial = await Promise.all([
     fetch("/catalogue.json").then((r) => r.json()),

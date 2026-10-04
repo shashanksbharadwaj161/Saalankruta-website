@@ -1,224 +1,629 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
+  ArrowRight,
   ArrowUpRight,
   ChevronDown,
   Heart,
   Menu,
+  Minus,
+  Plus,
   Search,
   ShoppingBag,
   UserRound,
   X,
 } from "lucide-react";
-import { menu } from "./catalogue";
+import { inCategory } from "./catalogue";
 import { useStore } from "./store";
 import Modal from "./Modal";
-import GlassEdge from "./effects/GlassEdge";
-const policies = [
-  { name: "Privacy Policy", slug: "privacy-policy" },
-  { name: "Terms and Conditions", slug: "terms-and-conditions" },
-  { name: "Cancellation and Refund", slug: "cancellation-and-refund" },
-  { name: "Shipping and Delivery", slug: "shipping-and-delivery" },
-];
+
+type CollectionLink = { name: string; slug: string };
+type NavigationGroup = {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  href: string;
+  featured: string;
+  columns: { title: string; links: CollectionLink[] }[];
+};
 const path = (slug: string) => `/product-category/${slug}/`;
+const groups: NavigationGroup[] = [
+  {
+    id: "all",
+    name: "All Jewellery",
+    title: "Find your next piece.",
+    description:
+      "From a daily favourite to the finishing touch for a celebration.",
+    href: "/shop/",
+    featured: "necklace",
+    columns: [
+      {
+        title: "Jewellery",
+        links: [
+          { name: "Necklaces", slug: "necklace" },
+          { name: "Haras", slug: "hara" },
+          { name: "Bangles", slug: "bangles" },
+          { name: "Earrings", slug: "earrings" },
+          { name: "Finger rings", slug: "finger-rings" },
+          { name: "Combo sets", slug: "combo-set" },
+        ],
+      },
+      {
+        title: "The finishing touches",
+        links: [
+          { name: "Matti", slug: "matti" },
+          { name: "Nose pins", slug: "nose-pin" },
+          { name: "Hair accessories", slug: "hair-accessories" },
+          { name: "Netti chutti", slug: "netti-chutti" },
+          { name: "Gift items", slug: "gift-items" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "necklaces",
+    name: "Necklaces & Haras",
+    title: "A beautiful beginning.",
+    description:
+      "Explore necklaces, long haras and pendants, all in one place.",
+    href: path("necklace"),
+    featured: "necklace",
+    columns: [
+      {
+        title: "Explore the collection",
+        links: [
+          { name: "All necklaces", slug: "necklace" },
+          { name: "Haras", slug: "hara" },
+          { name: "Hara collection", slug: "hara-hara" },
+          { name: "Pendants", slug: "pendent" },
+          { name: "Pendant & earring sets", slug: "pendent-earring" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "bangles",
+    name: "Bangles",
+    title: "Beauty, around you.",
+    description: "Choose your bangles by style, from daily pieces to kadas.",
+    href: path("bangles"),
+    featured: "bangles",
+    columns: [
+      {
+        title: "Explore the collection",
+        links: [
+          { name: "All bangles", slug: "bangles" },
+          { name: "Daily use bangles", slug: "daily-use-bangles" },
+          { name: "Antique bangles", slug: "antique-bangle" },
+          { name: "CZ & stone", slug: "cz-stone" },
+          { name: "Kadas", slug: "kada" },
+          { name: "More bangles", slug: "uncategorized" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "earrings",
+    name: "Earrings",
+    title: "The smallest statement.",
+    description: "Discover earrings and studs for the way you dress every day.",
+    href: path("earrings"),
+    featured: "earrings",
+    columns: [
+      {
+        title: "Explore the collection",
+        links: [
+          { name: "All earrings", slug: "earrings" },
+          { name: "CZ studs", slug: "cz-studs" },
+          { name: "Daily use studs", slug: "daily-use-studs" },
+          { name: "Matti", slug: "matti" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "bridal",
+    name: "Bridal & Sets",
+    title: "For your special day.",
+    description:
+      "Bring your look together with sets and traditional accessories.",
+    href: path("combo-set"),
+    featured: "bridal-set",
+    columns: [
+      {
+        title: "Sets",
+        links: [
+          { name: "Combo sets", slug: "combo-set" },
+          { name: "Bridal sets", slug: "bridal-set" },
+          { name: "Pendant & earring sets", slug: "pendent-earring" },
+        ],
+      },
+      {
+        title: "Complete your look",
+        links: [
+          { name: "Hair accessories", slug: "hair-accessories" },
+          { name: "Netti chutti", slug: "netti-chutti" },
+          { name: "Matti", slug: "matti" },
+          { name: "Nose pins", slug: "nose-pin" },
+          { name: "Finger rings", slug: "finger-rings" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "gifts",
+    name: "Gifts",
+    title: "A thought, beautifully given.",
+    description:
+      "Discover gift items for the people and occasions you hold close.",
+    href: path("gift-items"),
+    featured: "gift-items",
+    columns: [
+      {
+        title: "Explore the collection",
+        links: [
+          { name: "All gift items", slug: "gift-items" },
+          { name: "Kumkumbharani", slug: "kumkumbharani" },
+          {
+            name: "Silver plated gift items",
+            slug: "silver-plated-gift-items",
+          },
+        ],
+      },
+    ],
+  },
+];
+const knownCategories = new Set(
+  groups.flatMap((group) =>
+    group.columns.flatMap((column) => column.links.map((link) => link.slug)),
+  ),
+);
+const policies = [
+  { name: "Shipping & delivery", slug: "shipping-and-delivery" },
+  { name: "Cancellation & refund", slug: "cancellation-and-refund" },
+  { name: "Privacy policy", slug: "privacy-policy" },
+  { name: "Terms & conditions", slug: "terms-and-conditions" },
+];
+
 export default function Header() {
-  const { cart, wishlist, customer } = useStore();
-  const [open, setOpen] = useState(false),
-    [search, setSearch] = useState(false),
-    [dropdown, setDropdown] = useState("");
+  const { cart, wishlist, customer, products, categories } = useStore();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState(false);
+  const [dropdown, setDropdown] = useState("");
+  const [mobileGroup, setMobileGroup] = useState("");
+  const header = useRef<HTMLElement>(null);
+  const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
   const location = useLocation();
+  const count = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  const group = groups.find((item) => item.id === dropdown);
+  const featured = group
+    ? products.find(
+        (product) =>
+          inCategory(product, group.featured, categories) &&
+          product.images.length,
+      )
+    : undefined;
+  const extraCategories = categories.filter(
+    (category) => !knownCategories.has(category.slug),
+  );
+
   useEffect(() => {
     setOpen(false);
     setSearch(false);
     setDropdown("");
-  }, [location.pathname]);
-  const count = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    setMobileGroup("");
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!dropdown) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!header.current?.contains(event.target as Node)) setDropdown("");
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [dropdown]);
+
+  function navigateKeys(event: KeyboardEvent<HTMLButtonElement>, id: string) {
+    if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const index = groups.findIndex((item) => item.id === id);
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? groups.length - 1
+            : (index + (event.key === "ArrowDown" ? 1 : -1) + groups.length) %
+              groups.length;
+      const next = groups[nextIndex];
+      setDropdown(next.id);
+      triggers.current[next.id]?.focus();
+    }
+  }
+
+  function openSearch() {
+    setOpen(false);
+    setDropdown("");
+    setSearch(true);
+  }
+
   return (
     <>
-      <div className="announcement">
-        Jewellery for your everyday and extraordinary.
-      </div>
       <header
-        className="header"
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
+        className="header boutique-header"
+        ref={header}
+        data-menu-open={Boolean(dropdown)}
+        onBlur={(event) => {
+          if (
+            event.relatedTarget &&
+            !event.currentTarget.contains(event.relatedTarget)
+          )
             setDropdown("");
-            setSearch(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && dropdown) {
+            event.preventDefault();
+            triggers.current.collections?.focus();
+            setDropdown("");
           }
         }}
       >
-        <GlassEdge />
-        <div className="header-main">
-          <button
-            className="icon-button mobile-only"
-            aria-label="Open navigation"
-            onClick={() => setOpen(true)}
-          >
-            <Menu />
-          </button>
-          <Link className="wordmark" to="/" aria-label="Saalankruta home">
+        <div className="boutique-brand-row">
+          <nav className="boutique-brand-start" aria-label="Main navigation">
+            <button
+              className="boutique-icon boutique-mobile-toggle"
+              aria-label="Open navigation"
+              onClick={() => setOpen(true)}
+            >
+              <Menu aria-hidden="true" />
+            </button>
+            <button
+              className="boutique-collections-trigger"
+              ref={(element) => {
+                triggers.current.collections = element;
+              }}
+              aria-expanded={Boolean(dropdown)}
+              aria-controls="boutique-collections-menu"
+              onClick={() => setDropdown(dropdown ? "" : "all")}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setDropdown(dropdown || "all");
+                  requestAnimationFrame(() =>
+                    header.current
+                      ?.querySelector<HTMLButtonElement>(
+                        '.boutique-mega-rail [aria-selected="true"]',
+                      )
+                      ?.focus(),
+                  );
+                }
+              }}
+            >
+              <span>Collections</span>
+              <ChevronDown size={14} aria-hidden="true" />
+            </button>
+            <Link className="boutique-story-link" to="/about/">
+              Our story
+            </Link>
+          </nav>
+          <Link className="boutique-logo" to="/" aria-label="Saalankruta home">
             <img
               src="/logo.png"
-              width="175"
-              height="58"
+              width="192"
+              height="64"
               alt="Saalankruta. Every woman's dream"
             />
           </Link>
-          <nav className="desktop-nav" aria-label="Main navigation">
-            <NavLink to="/" end>
-              Home
-            </NavLink>
-            {menu.map((item) => (
-              <div
-                className="nav-group"
-                key={item.slug}
-                data-open={dropdown === item.slug}
-                onBlur={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget))
-                    setDropdown("");
-                }}
-              >
-                <NavLink to={path(item.slug)}>{item.name}</NavLink>
-                {item.children.length > 0 && (
-                  <>
-                    <button
-                      className="nav-disclosure"
-                      aria-label={`Show ${item.name} categories`}
-                      aria-expanded={dropdown === item.slug}
-                      aria-controls={`menu-${item.slug}`}
-                      onClick={() =>
-                        setDropdown(dropdown === item.slug ? "" : item.slug)
-                      }
-                    >
-                      <ChevronDown size={12} />
-                    </button>
-                    <div className="submenu" id={`menu-${item.slug}`}>
-                      {item.children.map((child) => (
-                        <Link to={path(child.slug)} key={child.slug}>
-                          {child.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-            <div
-              className="nav-group"
-              data-open={dropdown === "contact"}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) setDropdown("");
-              }}
-            >
-              <Link to="/contact/">Contact Us</Link>
-              <button
-                className="nav-disclosure"
-                aria-label="Show customer care pages"
-                aria-expanded={dropdown === "contact"}
-                aria-controls="menu-contact"
-                onClick={() =>
-                  setDropdown(dropdown === "contact" ? "" : "contact")
-                }
-              >
-                <ChevronDown size={12} />
-              </button>
-              <div className="submenu" id="menu-contact">
-                {policies.map((p) => (
-                  <Link key={p.slug} to={`/${p.slug}/`}>
-                    {p.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </nav>
-          <div className="header-actions">
+          <div className="boutique-utilities">
             <button
-              className="icon-button"
+              className="boutique-icon boutique-header-search"
               aria-label="Search products"
-              aria-expanded={search}
-              onClick={() => setSearch(!search)}
+              onClick={openSearch}
+              aria-haspopup="dialog"
             >
-              {search ? <X /> : <Search />}
+              <Search aria-hidden="true" />
             </button>
             <Link
-              className="icon-button desktop-only"
-              to="/wishlist/"
-              aria-label={`Wishlist, ${wishlist.length} items`}
-            >
-              <Heart />
-              {wishlist.length > 0 && <sup>{wishlist.length}</sup>}
-            </Link>
-            <Link
-              className="icon-button desktop-only"
+              className="boutique-utility boutique-account"
               to="/account/"
               aria-label={customer ? "Your account" : "Sign in"}
             >
-              <UserRound />
+              <UserRound aria-hidden="true" />
             </Link>
             <Link
-              className="icon-button"
+              className="boutique-utility boutique-wishlist"
+              to="/wishlist/"
+              aria-label={`Wishlist, ${wishlist.length} items`}
+            >
+              <Heart aria-hidden="true" />
+              {wishlist.length > 0 && <sup>{wishlist.length}</sup>}
+            </Link>
+            <Link
+              className="boutique-utility boutique-bag"
               to="/cart/"
               aria-label={`Shopping bag, ${count} items`}
             >
-              <ShoppingBag />
+              <ShoppingBag aria-hidden="true" />
               {count > 0 && <sup>{count}</sup>}
             </Link>
           </div>
         </div>
-        {search && (
-          <form className="search-bar" action="/shop/">
-            <input
-              name="q"
-              autoFocus
-              placeholder="Search jewellery & gifts"
-              aria-label="Search jewellery"
-            />
-            <button className="primary">Search</button>
-          </form>
+        {group && (
+          <div
+            className="boutique-mega"
+            id="boutique-collections-menu"
+            aria-label={`${group.name} collections`}
+          >
+            <div
+              className="boutique-mega-rail"
+              role="tablist"
+              aria-label="Collection groups"
+              aria-orientation="vertical"
+            >
+              <span className="boutique-small-label">The collections</span>
+              {groups.map((item) => (
+                <button
+                  key={item.id}
+                  id={`collection-tab-${item.id}`}
+                  role="tab"
+                  aria-selected={dropdown === item.id}
+                  aria-controls="boutique-category-panel"
+                  tabIndex={dropdown === item.id ? 0 : -1}
+                  ref={(element) => {
+                    triggers.current[item.id] = element;
+                  }}
+                  onClick={() => setDropdown(item.id)}
+                  onKeyDown={(event) => navigateKeys(event, item.id)}
+                >
+                  {item.name}
+                  <ArrowUpRight size={15} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+            <div
+              className="boutique-mega-body"
+              id="boutique-category-panel"
+              role="tabpanel"
+              aria-labelledby={`collection-tab-${group.id}`}
+              tabIndex={0}
+            >
+              <div className="boutique-mega-intro">
+                <h2>{group.title}</h2>
+                <p>{group.description}</p>
+                <Link to={group.href}>
+                  Explore{" "}
+                  {group.id === "all"
+                    ? "all jewellery"
+                    : group.id === "necklaces"
+                      ? "necklaces"
+                      : group.id === "bridal"
+                        ? "sets"
+                        : group.name.toLowerCase()}{" "}
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </Link>
+              </div>
+              <div className="boutique-mega-columns">
+                {group.columns.map((column) => (
+                  <div className="boutique-mega-column" key={column.title}>
+                    <h3>{column.title}</h3>
+                    {column.links.map((link) => (
+                      <Link to={path(link.slug)} key={link.slug}>
+                        {link.name}
+                        <ArrowUpRight size={14} aria-hidden="true" />
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+                {group.id === "all" && extraCategories.length > 0 && (
+                  <div className="boutique-mega-column">
+                    <h3>More collections</h3>
+                    {extraCategories.map((category) => (
+                      <Link to={path(category.slug)} key={category.id}>
+                        {category.name.replace(/&amp;/g, "&")}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            {featured && (
+              <Link
+                className="boutique-mega-piece"
+                to={`/product/${featured.slug}/`}
+              >
+                <div>
+                  <img
+                    src={featured.images[0].src}
+                    alt={featured.images[0].alt || featured.name}
+                    loading="lazy"
+                  />
+                </div>
+                <span>
+                  {featured.name}
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </span>
+              </Link>
+            )}
+            <button
+              className="boutique-icon boutique-mega-close"
+              aria-label="Close collection menu"
+              onClick={() => {
+                triggers.current.collections?.focus();
+                setDropdown("");
+              }}
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
         )}
       </header>
       {open && (
         <Modal
           label="Navigation"
-          className="drawer"
+          className="boutique-navigation-overlay"
           close={() => setOpen(false)}
         >
-          <div className="drawer-top">
-            <img src="/logo.png" alt="Saalankruta" />
+          <div className="boutique-overlay-top">
+            <Link to="/" aria-label="Saalankruta home">
+              <img src="/logo.png" width="170" height="56" alt="Saalankruta" />
+            </Link>
             <button
-              className="icon-button"
+              className="boutique-icon"
               onClick={() => setOpen(false)}
               aria-label="Close navigation"
             >
-              <X />
+              <X aria-hidden="true" />
             </button>
           </div>
-          <nav aria-label="Mobile navigation">
-            <Link to="/">Home</Link>
-            {menu.map((item) => (
-              <div key={item.slug}>
-                <Link to={path(item.slug)}>
-                  {item.name}
-                  <ArrowUpRight size={16} />
-                </Link>
-                {item.children.map((child) => (
-                  <Link className="sub" to={path(child.slug)} key={child.slug}>
-                    {child.name}
-                  </Link>
+          <div className="boutique-mobile-menu-content">
+            <button className="boutique-mobile-find" onClick={openSearch}>
+              <Search size={19} aria-hidden="true" />
+              <span>Find a piece</span>
+              <ArrowRight size={19} aria-hidden="true" />
+            </button>
+            <span className="boutique-small-label">Discover Saalankruta</span>
+            <nav
+              className="boutique-mobile-collections"
+              aria-label="Mobile navigation"
+            >
+              <Link className="boutique-mobile-all" to="/shop/">
+                All jewellery <ArrowUpRight size={24} aria-hidden="true" />
+              </Link>
+              {groups
+                .filter((item) => item.id !== "all")
+                .map((item) => (
+                  <div className="boutique-mobile-group" key={item.id}>
+                    <button
+                      aria-expanded={mobileGroup === item.id}
+                      aria-controls={`mobile-collections-${item.id}`}
+                      onClick={() =>
+                        setMobileGroup(mobileGroup === item.id ? "" : item.id)
+                      }
+                    >
+                      <span>{item.name}</span>
+                      {mobileGroup === item.id ? (
+                        <Minus size={19} aria-hidden="true" />
+                      ) : (
+                        <Plus size={19} aria-hidden="true" />
+                      )}
+                    </button>
+                    {mobileGroup === item.id && (
+                      <div
+                        className="boutique-mobile-children"
+                        id={`mobile-collections-${item.id}`}
+                      >
+                        {item.columns.map((column) => (
+                          <div key={column.title}>
+                            {item.columns.length > 1 && <h3>{column.title}</h3>}
+                            {column.links.map((link) => (
+                              <Link key={link.slug} to={path(link.slug)}>
+                                {link.name}
+                                <ArrowUpRight size={15} aria-hidden="true" />
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </div>
-            ))}
-            <div>
-              <Link to="/contact/">Contact Us</Link>
-              {policies.map((p) => (
-                <Link className="sub" to={`/${p.slug}/`} key={p.slug}>
-                  {p.name}
+              {extraCategories.map((category) => (
+                <Link
+                  className="boutique-mobile-extra"
+                  key={category.id}
+                  to={path(category.slug)}
+                >
+                  {category.name.replace(/&amp;/g, "&")}
+                  <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
               ))}
+            </nav>
+            <nav
+              className="boutique-mobile-personal"
+              aria-label="Your shopping"
+            >
+              <Link to="/account/">
+                <UserRound size={19} aria-hidden="true" />
+                <span>{customer ? "Your account" : "Sign in / Register"}</span>
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
+              <Link to="/wishlist/">
+                <Heart size={19} aria-hidden="true" />
+                <span>Wishlist</span>
+                <small>{wishlist.length} pieces</small>
+              </Link>
+              <Link to="/cart/">
+                <ShoppingBag size={19} aria-hidden="true" />
+                <span>Shopping bag</span>
+                <small>{count} pieces</small>
+              </Link>
+            </nav>
+            <nav
+              className="boutique-mobile-care"
+              aria-label="About and customer care"
+            >
+              <Link to="/about/">Our story</Link>
+              <Link to="/contact/">Contact us</Link>
+              <Link to="/track-order/">Track your order</Link>
+              {policies.map((policy) => (
+                <Link key={policy.slug} to={`/${policy.slug}/`}>
+                  {policy.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </Modal>
+      )}
+      {search && (
+        <Modal
+          label="Search jewellery"
+          className="boutique-search-overlay"
+          close={() => setSearch(false)}
+        >
+          <div className="boutique-overlay-top">
+            <span className="boutique-small-label">
+              The Saalankruta collection
+            </span>
+            <button
+              className="boutique-icon"
+              aria-label="Close search"
+              onClick={() => setSearch(false)}
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
+          <h2>
+            Find your next <em>favourite.</em>
+          </h2>
+          <form className="boutique-search-form" action="/shop/">
+            <Search size={23} aria-hidden="true" />
+            <input
+              type="search"
+              name="q"
+              autoFocus
+              required
+              placeholder="Search necklaces, bangles, earrings…"
+              aria-label="Search jewellery"
+            />
+            <button type="submit" aria-label="Search products">
+              <ArrowRight size={23} aria-hidden="true" />
+            </button>
+          </form>
+          <div className="boutique-search-suggestions">
+            <span className="boutique-small-label">
+              Or explore a collection
+            </span>
+            <div>
+              {groups
+                .filter((item) => item.id !== "all")
+                .map((item) => (
+                  <Link key={item.id} to={item.href}>
+                    {item.name}
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </Link>
+                ))}
             </div>
-            <Link to="/account/">Your account</Link>
-            <Link to="/wishlist/">Your wishlist</Link>
-          </nav>
+          </div>
         </Modal>
       )}
     </>

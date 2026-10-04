@@ -16,7 +16,7 @@ A complete custom Saalankruta storefront with WooCommerce managing catalogue, cu
 
 ## Capabilities and Constraints
 
-React, TypeScript and Vite frontend in this repository; static hosting and PHP integration on the existing Hostinger plan. Preserve live WooCommerce data and original category navigation order. English, INR, India-only addresses, guest checkout, accounts, wishlist and verified order tracking. Production payment submission stays disabled until gateway testing. Shipping fee, free-delivery threshold, return policy and verified WhatsApp number remain launch inputs.
+React, TypeScript and Vite frontend in this repository; static hosting and PHP integration on the existing Hostinger plan. Preserve live WooCommerce data and product/category URLs. The owner authorises reorganising navigation and homepage presentation to improve browsing. English, INR, India-only addresses, guest checkout, accounts, wishlist and verified order tracking. Production payment submission stays disabled until gateway testing. Shipping fee, free-delivery threshold, return policy and verified WhatsApp number remain launch inputs.
 
 ## Brand Commitments
 

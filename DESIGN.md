@@ -1,16 +1,20 @@
 ---
 name: Saalankruta Royal Boutique
-description: A contemporary jewellery salon in rose, wine and gold
+description: A cinematic Indian jewellery boutique in rose, wine and gold
 colors:
   primary: "#7c3158"
-  royal: "#3f1830"
+  royal: "#351326"
   gold: "#c5a66f"
-  porcelain: "#fcf8fb"
-  ink: "#352b33"
+  porcelain: "#fff9fc"
+  ink: "#351829"
   muted: "#675561"
-  line: "#e2cfd9"
+  line: "#decbd5"
   photograph: "#f0e6ed"
+  canvas: "#f5e4ec"
   shaderRose: "#f5e4ec"
+  shaderHighlight: "#fce8f1"
+  shaderFold: "#dc91b7"
+  shaderGold: "#f1dba8"
   glass: "#ffffff"
 typography:
   display:
@@ -23,23 +27,23 @@ typography:
     lineHeight: 1.6
 rounded:
   disclosure: "4px"
-  control: "6px"
-  card: "8px"
-  overlay: "12px"
-  panel: "16px"
+  control: "0px"
+  card: "0px"
+  overlay: "4px"
+  panel: "0px"
 spacing:
   unit: "8px"
 ---
 
 ## Overview
 
-**Creative North Star: "The Rose Salon"**
+**Creative North Star: "Jewellery in Motion"**
 
-THESIS: An Indian jewellery boutique with the intimacy of a private salon and the clarity of a modern shop. OWN-WORLD: rose silk, polished glass, fine gold edges and accurate product photography. STORY: welcome, explore the original collections, inspect a piece, purchase with confidence. FIRST VIEWPORT: a rose silk editorial introduction beside an original necklace photograph, with a compact glass navigation above. FORM: fine serif headlines, pale pink porcelain product grids, restrained rectangular controls and softly curved glass overlays.
+THESIS: An Indian jewellery boutique with cinematic presence and the clarity of a modern shop. OWN-WORLD: one pale-rose canvas, wine typography, polished glass, fine gold edges and accurate product photography. STORY: a full-width horizontal campaign cinema, an editorial introduction, a balanced visual collection index, actual products and the Bengaluru boutique. OPENING: a stable horizontal headline and visible shopping action sit above the intact film beneath one compact glass header. The full-width 16:9 desktop film may extend below the first viewport; its silhouette is never cropped to force a shorter box. FORM: consistent page gutters, equal photographic frames, Bodoni headlines and quiet Jost commerce controls. The owner's latest feedback explicitly favours a coherent composition over staggered cards, asymmetric featured products and contrasting dark bands.
 
 ## Colors
 
-Pink remains the recognisable brand action colour. Wine supplies high-contrast lettering and announcement chrome. Rose-and-gold shader folds provide the homepage atmosphere. Gold marks borders and small details. Porcelain supports accurate photography and readable shopping pages.
+Pink remains the recognisable brand action colour. Wine supplies high-contrast lettering rather than a dark frame around the campaign. A shared pale-rose canvas supports the opening title, horizontal film and its controls. Rose-and-gold shader folds provide ornamental atmosphere around the cinema, behind the boutique introduction and at the visit section. The film and catalogue photographs retain their original colours. Gold marks borders and small details. Porcelain supports accurate photography and readable shopping pages. The footer continues the pale surface language without a contrasting dark band.
 
 ## Typography
 
@@ -47,34 +51,40 @@ Bodoni Moda supplies a formal jewellery editorial voice. Jost gives prices, filt
 
 ## Layout
 
-Preserve original navigation and homepage collection order. Spacious desktop product grids become two columns on mobile. Compact header controls lead to a full-screen mobile navigation. Product and checkout pages prioritise readable information over decoration.
+Preserve every category and product route. The owner explicitly requested new headers, layouts and a more organised menu, authorising a new browsing hierarchy. One Collections disclosure opens a six-group mega menu with clear subcategory columns and real photography. Mobile uses a full-screen accordion menu. The original header logo is positioned at the viewport centre independently of unequal left and right controls; narrow phones use a smaller mark to preserve 44px utility targets.
+
+Use the shared `--page-gutter: clamp(18px, 4.5vw, 64px)` for the mobile cinema inset, page content, brand row and footer grid. The narrowest header has a deliberate control inset to prevent overlap. Collection tiles form balanced four-column desktop and two-column mobile grids with equal square photographs. Product edits use equal four-column/two-column grids and consistent 4:5 image frames. Do not stagger card positions or enlarge the first product into an asymmetric feature. Account, cart and checkout headings remain compact; the login form is a direct usable form rather than a large editorial panel. Product and checkout pages prioritise readable information over decoration.
 
 ## Elevation & Depth
 
-**The Display Case Rule.** Glass belongs on navigation and photographic overlays. Use translucent porcelain, blur, a fine white highlight and gold edge; maintain an opaque fallback. Shopping forms and product information remain solid surfaces. The hero shader and footer logo animate slowly only while visible and while the document is active. Honour reduced-motion and reduced-transparency preferences with a static CSS atmosphere and the unchanged original logo. Checkout has no decorative animation.
+**The Display Case Rule.** Glass belongs on navigation and photographic overlays. Use translucent porcelain, blur, a fine white highlight and gold edge; maintain an opaque fallback. Shopping forms and product information remain solid surfaces. Shader effects are gated by visibility and document activity. The supplied crest is displayed intact in the story page and footer; its single footer entrance honours reduced motion. The former liquid-logo overlay is inactive. Honour reduced-motion and reduced-transparency preferences with a static CSS atmosphere and the unchanged original logo. Checkout has no decorative animation.
+
+The shader refinement now has source implementation for organic swishes responding to desktop hover and mobile touch. Passive listeners on the parent surface write normalized position and gesture energy to refs, preserving native scrolling and shopping controls. A `waterPlane` surface uses soft rose folds and restrained pale gold without grain; an imperative animation driver smooths input and lets gesture energy decay. The opening Pause motion control stops the necklace film and all three homepage shader backgrounds. Live canvas rendering and pause-frame comparison were checked; physical touch, Safari and device performance remain verification work.
 
 ## Shapes
 
-Glass chrome uses a softly curved rectangle. Editorial photography can use a shallow arch frame. Product cards remain open and unboxed, with a consistent image ratio.
+Editorial frames and primary shopping controls have sharp corners. Small utility controls may be circular; small glass disclosures use a 4px radius. Product cards remain open and unboxed. Catalogue photographs retain the actual product appearance. The film is always framed at 16:9 without an arch or cropped pendant.
 
 ## Components
 
-Desktop navigation uses deliberate dropdown disclosures and mobile uses an accessible full-screen menu. Purchase buttons use brand pink with high contrast. Wishlist controls have touch-sized targets. Image overlays use glass without obscuring product details.
+Desktop navigation uses one compact header: Collections and Our story, the centred original logo, then icon utilities with accessible names. Its mega menu has a keyboard-operable group tab rail, meaningful category columns and an actual product image. Escape and the close control return focus to Collections. Mobile uses a full-screen accordion menu with a persistent close bar. Search has a dedicated dialog. Purchase buttons use brand pink with high contrast. Wishlist controls have touch-sized targets. Image overlays use glass without obscuring product details.
 
 ## Do's and Don'ts
 
 - Use original product photography, exact names and authoritative prices.
-- Keep category and submenu order unchanged.
+- Keep category/product URLs and the complete catalogue accessible; presentation may be reorganised.
+- Maintain shared gutters, uniform category/product image ratios and balanced grid alignment.
+- Keep the complete film intact within the rose canvas; do not introduce a separate dark campaign or footer band.
 - Use liquid glass sparingly where it creates depth.
 - Do not fabricate customer proof, product specifications or shipping promises.
 - Do not put low-contrast gold text on porcelain or use decorative motion on checkout.
 
 ## Implementation dials
 
-Design variance 7, motion intensity 5 on the editorial hero and 0 in commerce forms, visual density 3. Fixed light rose surfaces preserve the supplied brand direction.
+Design variance 7, motion intensity 6 on editorial browsing and 0 in commerce forms, visual density 3. The owner's request for kinetic luxury is now paired with an explicit preference for uniform composition. Fixed light rose surfaces, a shared rose cinema canvas and wine text preserve the supplied brand direction. Bodoni Moda's fine contrast and formal letterforms suit this jewellery brand; Jost keeps product and form information clear. Glass is a web approximation, not an Apple platform component.
 
-Glass highlights use white alpha layers; shadows use low-opacity wine. Circular wishlist/badge shapes and the 160px/125px editorial arch are intentional exceptions to the rectangular control scale.
+Glass highlights use white alpha layers; shadows use low-opacity wine. Word masks have explicit spacing and descender clearance. One-time word entrances establish hierarchy and image masks introduce collections. The film seeks softly on native scroll; its headline and caption remain stable. The introduction copy aligns beneath its heading rather than floating in a displaced column. Controls and prices stay stable. Native scrolling is retained; motion leaves clean up their observers, GSAP contexts and media queries.
 
 ## Jewellery motion
 
-The Necklace Story uses an Omni-generated campaign film, edited to 5.5 seconds with detailed gold settings and rose stones. The visible caption identifies imagined brand jewellery; it is never an exact SKU representation. Product photography remains unchanged. GSAP seeks the film through three editorial chapters on native scroll. The video loads near the viewport, has frequent keyframes for responsive seeking, and does not render continuously while stationary. A pause control freezes the current frame. Short screens or stages that cannot fit beneath the header use ordinary flow and muted inline playback. Reduced motion retains the poster and static copy. The generated source is 1280x720; the requested higher-resolution Flow export is not represented as completed.
+The opening uses an Omni-generated campaign film, edited to 5.5 seconds with detailed gold settings and rose stones. The visible caption identifies imagined brand jewellery; it is never an exact SKU representation. At the owner's request, the Gemini sparkle was removed from an empty background region using contextual interpolation; the jewellery was not cropped or retouched. The original master is retained privately. The complete 16:9 picture spans the desktop width and uses shared inset gutters on mobile. The title sits above the film rather than overlaying jewellery. GSAP seeks the film on ordinary native scroll. There is no sticky stage, tall spacer or changing chapter headline. Soft atmosphere masks fade to the same rose base at the opening/introduction boundary. Video loads near the viewport and does not render continuously while stationary. Pause motion freezes the current film frame and places every homepage shader canvas into a demand frame loop. Reduced motion retains the poster and static copy. The source is 1280x720; no higher-resolution export is claimed. Real-device touch, Safari behaviour and Core Web Vitals remain launch verification work.

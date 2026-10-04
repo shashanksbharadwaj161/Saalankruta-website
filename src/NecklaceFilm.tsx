@@ -22,13 +22,10 @@ export default function NecklaceFilm({
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
-    const short = matchMedia("(max-height: 740px)");
     let disposed = false;
     const seek = () => {
       if (
         disposed ||
-        short.matches ||
-        flowing ||
         paused ||
         !Number.isFinite(video.duration) ||
         video.seeking
@@ -43,11 +40,7 @@ export default function NecklaceFilm({
     };
     const mode = () => {
       video.pause();
-      if (!paused && (short.matches || flowing))
-        void video.play().catch(() => {
-          /* Poster remains usable when autoplay is restricted. */
-        });
-      else if (!paused) seek();
+      if (!paused) seek();
     };
     const loaded = () => {
       callbacks.current.ready();
@@ -58,7 +51,6 @@ export default function NecklaceFilm({
     video.addEventListener("loadeddata", loaded);
     video.addEventListener("seeked", seek);
     video.addEventListener("error", error);
-    short.addEventListener("change", mode);
     if (video.readyState >= 2) loaded();
     else mode();
     return () => {
@@ -68,7 +60,6 @@ export default function NecklaceFilm({
       video.removeEventListener("loadeddata", loaded);
       video.removeEventListener("seeked", seek);
       video.removeEventListener("error", error);
-      short.removeEventListener("change", mode);
     };
   }, [invalidate, progress, paused, flowing]);
   return (

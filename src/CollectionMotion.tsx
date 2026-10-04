@@ -21,6 +21,24 @@ export default function CollectionMotion() {
         const context = gsap.context(
           () => {
             gsap.utils
+              .toArray<HTMLElement>(".collection-tile-image")
+              .forEach((frame) => {
+                gsap.fromTo(
+                  frame,
+                  { clipPath: "inset(12% 0% 12% 0%)" },
+                  {
+                    clipPath: "inset(0% 0% 0% 0%)",
+                    duration: 1.15,
+                    ease: "power3.out",
+                    scrollTrigger: {
+                      trigger: frame,
+                      start: "top 90%",
+                      once: true,
+                    },
+                  },
+                );
+              });
+            gsap.utils
               .toArray<HTMLElement>(".collection-section.wrap")
               .forEach((section) => {
                 gsap.from(section.querySelector(".section-heading"), {

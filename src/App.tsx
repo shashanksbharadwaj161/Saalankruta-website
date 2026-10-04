@@ -1,4 +1,5 @@
 import CollectionMotion from "./CollectionMotion";
+import KineticText from "./KineticText";
 import NecklaceStory from "./NecklaceStory";
 import ProductFilters from "./ProductFilters";
 import Modal from "./Modal";
@@ -41,7 +42,6 @@ import { useStore } from "./store";
 import { api } from "./api";
 import {
   menu,
-  homepageOrder,
   price,
   productPrice,
   selectedVariation,
@@ -58,10 +58,10 @@ function useTitle(title: string) {
   }, [title]);
 }
 function ScrollReset() {
-  const { pathname } = useLocation();
+  const { pathname, search, hash, key } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname, search, hash, key]);
   return null;
 }
 const policyLinks = [
@@ -72,7 +72,10 @@ const policyLinks = [
 ];
 function Footer() {
   return (
-    <footer>
+    <footer className="atelier-footer">
+      <div className="footer-masthead" aria-hidden="true">
+        Saalankruta<span>Every woman’s dream.</span>
+      </div>
       <div className="footer-top">
         <div className="footer-brand">
           <BrandSignature />
@@ -178,113 +181,179 @@ function ProductCard({ product: p }: { product: Product }) {
 }
 function Home() {
   useTitle("Every woman's dream");
+  const [motionPaused, setMotionPaused] = useState(false);
   const { products, categories, loading } = useStore();
   const hero = products.find((p) => p.slug === "cz-necklace-4") || products[0];
+  const bridal = products.find((p) => inCategory(p, "bridal-set", categories));
+  const collectionTiles = [
+    {
+      slug: "necklace",
+      name: "Necklaces",
+      note: "The finishing touch",
+      product: hero,
+    },
+    {
+      slug: "bangles",
+      name: "Bangles",
+      note: "A little everyday ritual",
+      product: products.find((p) => p.slug === "cz-green-bangle"),
+    },
+    {
+      slug: "earrings",
+      name: "Earrings",
+      note: "Details that speak",
+      product:
+        products.find((p) => p.slug === "plate-changeable-stud") ||
+        products.find((p) => inCategory(p, "earrings", categories)),
+    },
+    {
+      slug: "bridal-set",
+      name: "Bridal & sets",
+      note: "For your big moments",
+      product: bridal,
+    },
+  ];
+  const selections = [
+    { slug: "necklace", title: "Around you.", note: "THE NECKLACE EDIT" },
+    { slug: "bangles", title: "In the details.", note: "THE BANGLE EDIT" },
+    {
+      slug: "gift-items",
+      title: "A thoughtful gesture.",
+      note: "JEWELLERY & GIFTS",
+    },
+  ];
   return (
-    <>
+    <div className="atelier-home">
       <CollectionMotion />
-      <section className="hero">
-        <RoyalAtmosphere />
-        <div className="hero-copy">
-          <div className="eyebrow">THE SAALANKRUTA COLLECTION</div>
-          <h1>
-            Tradition, <em>beautifully yours.</em>
-          </h1>
-          <p>
-            Jewellery for everyday rituals and unforgettable celebrations.
-            Discover your own expression of tradition.
-          </p>
-          <Link className="primary" to="/shop/">
-            Explore the collection <ArrowRight size={18} />
-          </Link>
-        </div>
-        <div className="hero-photo">
-          {hero && (
-            <img
-              src={hero.images[0]?.src}
-              alt={text(hero.name)}
-              fetchPriority="high"
-            />
-          )}
-          <Link
-            className="hero-tag"
-            to={hero ? `/product/${hero.slug}/` : "/shop/"}
-          >
-            <span>
-              A closer look
-              <br />
-              <strong>{text(hero?.name || "The collection")}</strong>
-            </span>
-            <ArrowUpRight />
-          </Link>
+      <NecklaceStory paused={motionPaused} onPauseChange={setMotionPaused} />
+      <section className="atelier-manifesto">
+        <RoyalAtmosphere paused={motionPaused} />
+        <div className="wrap">
+          <div className="atelier-section-label">
+            <span>FROM OUR BOUTIQUE</span>
+            <span>BENGALURU, INDIA</span>
+          </div>
+          <h2>
+            <KineticText text="An expression entirely yours." />
+          </h2>
+          <div className="manifesto-bottom">
+            <p>
+              Traditional jewellery, contemporary choices. Explore necklaces,
+              bangles and occasion pieces from our Bengaluru boutique.
+            </p>
+            <Link className="text-link" to="/about/">
+              Meet Saalankruta <ArrowUpRight size={20} />
+            </Link>
+          </div>
         </div>
       </section>
-      <div className="editorial-strip">
-        <span>Necklaces to remember</span>
-        <span>✧</span>
-        <span>Details to delight</span>
-        <span>✧</span>
-        <span>Tradition to treasure</span>
-      </div>
-      <NecklaceStory />
-      <section className="intro wrap">
-        <div className="eyebrow">THE BOUTIQUE</div>
-        <h2>
-          Some things are personal.
-          <br />
-          <em>Your jewellery should be, too.</em>
-        </h2>
-        <p>
-          Explore traditional jewellery, bridal sets and thoughtful gifts from
-          our Bengaluru boutique.
-        </p>
+      <section
+        className="collection-index wrap"
+        aria-labelledby="collection-index-title"
+      >
+        <div className="section-heading">
+          <div>
+            <h2 id="collection-index-title">
+              <KineticText text="The collections." />
+            </h2>
+          </div>
+          <Link className="text-link" to="/shop/">
+            Explore every piece <ArrowUpRight size={20} />
+          </Link>
+        </div>
+        <div className="collection-canvas">
+          {collectionTiles.map((item, i) => (
+            <Link
+              className={`collection-tile tile-${i + 1}`}
+              to={categoryPath(item.slug)}
+              key={item.slug}
+            >
+              <div className="collection-tile-image">
+                {item.product?.images[0] && (
+                  <img
+                    src={item.product.images[0].src}
+                    alt={text(item.product.name)}
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <div className="collection-tile-caption">
+                <span>
+                  <small>{item.note}</small>
+                  <strong>{item.name}</strong>
+                </span>
+                <ArrowUpRight size={24} />
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className="collection-index-links">
+          <span>Also discover</span>
+          {[
+            "hara",
+            "finger-rings",
+            "matti",
+            "nose-pin",
+            "hair-accessories",
+            "gift-items",
+          ].map((slug) => (
+            <Link key={slug} to={categoryPath(slug)}>
+              {text(categories.find((c) => c.slug === slug)?.name || slug)}
+            </Link>
+          ))}
+        </div>
       </section>
       {loading && <p className="wrap">Finding your favourites…</p>}
-      {homepageOrder.map((slug, index) => {
-        const cat = categories.find((c) => c.slug === slug);
-        const list = filterProducts(products, categories, { slug }).slice(0, 4);
+      {selections.map(({ slug, title, note }, index) => {
+        const selected = filterProducts(products, categories, { slug });
+        const list =
+          index === 0 && hero
+            ? [hero, ...selected.filter((p) => p.id !== hero.id)].slice(0, 4)
+            : selected.slice(0, 4);
         if (!list.length) return null;
         return (
           <section
-            className="collection-section wrap"
+            className={`collection-section atelier-edit edit-${index} wrap`}
             key={slug}
             id={slug === "necklace" ? "necklace-collection" : undefined}
           >
             <div className="section-heading">
               <div>
-                <h2>{text(cat?.name || slug)}</h2>
+                <h2>
+                  <KineticText text={title} />
+                </h2>
               </div>
               <Link className="text-link" to={categoryPath(slug)}>
-                Discover all <ArrowUpRight size={18} />
+                Shop{" "}
+                {text(categories.find((c) => c.slug === slug)?.name || slug)}{" "}
+                <ArrowUpRight size={18} />
               </Link>
             </div>
-            <div className="product-grid">
+            <div
+              className={`product-grid ${index === 0 ? "product-edit" : ""}`}
+            >
               {list.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
             {index === 1 && (
-              <div className="occasion">
+              <div className="atelier-occasion">
                 <div>
-                  <span className="eyebrow">FOR YOUR BIG MOMENTS</span>
                   <h2>
-                    A celebration
-                    <br />
-                    of <em>you.</em>
+                    <KineticText text="Some days deserve everything." />
                   </h2>
+                  <p>
+                    Bridal sets and traditional jewellery for the moments you
+                    make your own.
+                  </p>
                   <Link className="primary" to={categoryPath("bridal-set")}>
                     Explore bridal sets <ArrowRight size={18} />
                   </Link>
                 </div>
-                {products.find((p) => inCategory(p, "bridal-set", categories))
-                  ?.images[0] && (
+                {bridal?.images[0] && (
                   <img
-                    src={
-                      products.find((p) =>
-                        inCategory(p, "bridal-set", categories),
-                      )!.images[0].src
-                    }
-                    alt="Saalankruta bridal jewellery set"
+                    src={bridal.images[0].src}
+                    alt={text(bridal.name)}
                     loading="lazy"
                   />
                 )}
@@ -293,18 +362,27 @@ function Home() {
           </section>
         );
       })}
-      <section className="visit wrap">
-        <span className="eyebrow">A LITTLE CLOSER</span>
-        <h2>
-          Meet your next favourite
-          <br />
-          <em>at the boutique.</em>
-        </h2>
-        <Link className="text-link" to="/contact/">
-          Visit us in Bengaluru <ArrowUpRight />
-        </Link>
+      <section className="atelier-visit">
+        <RoyalAtmosphere paused={motionPaused} />
+        <div className="wrap">
+          <h2>
+            <KineticText text="Bengaluru." />
+          </h2>
+          <div className="visit-bottom">
+            <p>
+              No.3, Pushpahasa, 3rd Cross,
+              <br />
+              Sumukha Layout, Chikkalsandra,
+              <br />
+              Bengaluru – 560061
+            </p>
+            <Link className="text-link" to="/contact/">
+              Visit the boutique <ArrowUpRight size={24} />
+            </Link>
+          </div>
+        </div>
       </section>
-    </>
+    </div>
   );
 }
 function Collection() {
@@ -349,8 +427,10 @@ function Collection() {
       </div>
       <div className="collection-intro">
         <span className="eyebrow">THE SAALANKRUTA COLLECTION</span>
-        <h1>{title}</h1>
-        <p>Find the details that make it yours.</p>
+        <h1>
+          <KineticText text={title} />
+        </h1>
+        <p>Explore the collection. Find your expression.</p>
       </div>
       {related.length > 0 && (
         <div className="category-tabs">
@@ -799,7 +879,6 @@ function Empty({
 }) {
   return (
     <div className="empty">
-      <span className="tiny-star">✧</span>
       <h2>{title}</h2>
       <p>{message}</p>
       <Link className="primary" to={to}>
@@ -814,8 +893,7 @@ function Wishlist() {
   useTitle("Your wishlist");
   return (
     <div className="wrap page">
-      <div className="collection-intro">
-        <span className="eyebrow">A LITTLE SOMETHING FOR LATER</span>
+      <div className="collection-intro commerce-intro">
         <h1>Your wishlist</h1>
       </div>
       {wishlist.length ? (
@@ -882,8 +960,7 @@ function CartPage() {
   }, []);
   return (
     <div className="wrap page">
-      <div className="collection-intro">
-        <span className="eyebrow">YOUR NEXT FAVOURITES</span>
+      <div className="collection-intro commerce-intro">
         <h1>Your bag</h1>
       </div>
       {error && (
@@ -898,8 +975,8 @@ function CartPage() {
       {!error && !cart && <p>Opening your bag…</p>}
       {cart && !cart.items.length && (
         <Empty
-          title="A little room for something lovely"
-          message="Your bag is empty. Discover your next favourite piece."
+          title="Your bag is empty"
+          message="The pieces you add will appear here."
           to="/shop/"
           action="Explore the collection"
         />
@@ -977,7 +1054,7 @@ function CartPage() {
             </Link>
           </div>
           <aside className="order-summary">
-            <h2>The lovely details</h2>
+            <h2>Order summary</h2>
             <CartTotals cart={cart} />
             <form
               className="coupon"
@@ -1229,9 +1306,8 @@ function Checkout() {
         <span>/</span>
         <span>Checkout</span>
       </div>
-      <div className="collection-intro">
-        <span className="eyebrow">ALMOST YOURS</span>
-        <h1>A few lovely details.</h1>
+      <div className="collection-intro commerce-intro">
+        <h1>Checkout</h1>
       </div>
       {error && <ErrorBox message={error} />}
       <div className="checkout-steps">
@@ -1250,7 +1326,7 @@ function Checkout() {
           <section>
             {step === 1 ? (
               <form onSubmit={delivery}>
-                <h2>Where shall we send it?</h2>
+                <h2>Delivery details</h2>
                 {!customer && (
                   <p>
                     Checkout as a guest, or <Link to="/account/">sign in</Link>.
@@ -1473,14 +1549,12 @@ function Account() {
     }
   }
   return (
-    <div className="wrap page">
-      <div className="collection-intro">
-        <span className="eyebrow">YOUR PERSONAL EDIT</span>
+    <div className="wrap page account-page">
+      <div className="collection-intro commerce-intro">
         <h1>
-          {customer
-            ? `Hello, ${customer.name.split(" ")[0]}.`
-            : "A place for your favourites."}
+          {customer ? `Hello, ${customer.name.split(" ")[0]}.` : "Your account"}
         </h1>
+        {!customer && <p>Sign in to view your orders and saved pieces.</p>}
       </div>
       {message && (
         <p className="service-note" role="status">
@@ -1489,17 +1563,6 @@ function Account() {
       )}
       {!customer ? (
         <div className="account-layout">
-          <div className="account-editorial">
-            <h2>
-              A little more
-              <br />
-              <em>personal.</em>
-            </h2>
-            <p>
-              Keep your favourites close, revisit your orders, and make your
-              next visit effortless.
-            </p>
-          </div>
           <form onSubmit={submit}>
             <div className="account-tabs">
               <button
@@ -1654,8 +1717,7 @@ function Tracking() {
   useTitle("Track your order");
   return (
     <div className="wrap page narrow">
-      <div className="collection-intro">
-        <span className="eyebrow">ON ITS WAY TO YOU</span>
+      <div className="collection-intro commerce-intro">
         <h1>Track your order</h1>
         <p>
           Use your order number and the order key from your confirmation link,
@@ -1751,13 +1813,8 @@ function Contact() {
   useTitle("Contact the boutique");
   return (
     <div className="wrap page">
-      <div className="collection-intro">
-        <span className="eyebrow">LET’S MAKE IT PERSONAL</span>
-        <h1>
-          A little conversation.
-          <br />
-          <em>A lovely connection.</em>
-        </h1>
+      <div className="collection-intro commerce-intro">
+        <h1>Contact the boutique</h1>
       </div>
       <div className="contact-grid">
         <div>
@@ -1865,8 +1922,6 @@ function WhatsApp() {
 }
 function About() {
   useTitle("Our story");
-  const { products } = useStore();
-  const p = products.find((p) => p.slug === "cz-necklace-4");
   return (
     <div className="wrap page">
       <div className="collection-intro">
@@ -1878,7 +1933,13 @@ function About() {
         </h1>
       </div>
       <div className="about-grid">
-        {p && <img src={p.images[0]?.src} alt={text(p.name)} />}
+        <img
+          src="/brand-emblem.png"
+          alt="Saalankruta crest — Every Woman's Dream"
+          width="2000"
+          height="2000"
+          loading="lazy"
+        />
         <div>
           <h2>
             A place for tradition
