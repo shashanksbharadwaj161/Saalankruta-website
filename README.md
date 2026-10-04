@@ -36,4 +36,3 @@ The live WordPress site has not been replaced. Hosting/backend migration, stagin
 Follow `docs/deployment.md` rather than uploading source or overwriting the WooCommerce installation. Payment and database secrets must never be committed. The deployment branch contains only compiled public files and the PHP gateway; install the backend plugin separately.
 
 Actions always uploads the verified build artifact. Publishing the `deploy` branch is opt-in through repository variable `PUBLISH_DEPLOY_BRANCH=true`, after its Hostinger destination has been checked. The initial source push therefore does not publish a hosting replacement.
-

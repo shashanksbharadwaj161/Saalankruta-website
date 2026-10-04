@@ -1,0 +1,52 @@
+name: Verify and prepare Hostinger deployment
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  repository_dispatch:
+    types: [catalogue-update]
+  schedule:
+    - cron: "17 */6 * * *"
+permissions:
+  contents: write
+concurrency:
+  group: storefront-deployment
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm catalogue
+        env:
+          CATALOGUE_ORIGIN: ${{ vars.CATALOGUE_ORIGIN || 'https://saalankruta.com' }}
+      - run: pnpm test
+      - run: php -l server/index.php && php -l plugin/saalankruta-headless.php
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hostinger-storefront
+          path: dist
+          include-hidden-files: true
+      - name: Publish deploy branch
+        if: vars.PUBLISH_DEPLOY_BRANCH == 'true'
+        run: |
+          cd dist
+          git init
+          git checkout -b deploy
+          git config user.name "Saalankruta build"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Storefront build $GITHUB_SHA"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

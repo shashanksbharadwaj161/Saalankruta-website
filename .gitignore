@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env*
+!.env.example
+*.log
+config.local.php
+artifacts/
+
+.prerender/
+saal-sessions/

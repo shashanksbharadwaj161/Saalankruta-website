@@ -1,0 +1,27 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { StoreProvider } from "./store";
+import App from "./App";
+import "./style.css";
+import "./fonts.css";
+import "./royal.css";
+import "./motion.css";
+async function mountStorefront() {
+  const initial = await Promise.all([
+    fetch("/catalogue.json").then((r) => r.json()),
+    fetch("/categories.json").then((r) => r.json()),
+  ])
+    .then(([products, categories]) => ({ products, categories }))
+    .catch(() => undefined);
+  createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <StoreProvider initial={initial}>
+          <App />
+        </StoreProvider>
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+}
+void mountStorefront();

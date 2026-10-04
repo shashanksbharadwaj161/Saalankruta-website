@@ -1,0 +1,297 @@
+/* A scroll-controlled jewellery theatre, with static content before JS loads. */
+.necklace-story {
+  position: relative;
+  height: 230svh;
+  background: linear-gradient(135deg, #f6e7ef, #ecdae6 58%, #e5ccda);
+  border-block: 1px solid var(--line);
+}
+.necklace-stage {
+  --story-top: 105px;
+  position: sticky;
+  top: 105px;
+  min-height: calc(100svh - 105px);
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  align-items: center;
+  max-width: 1600px;
+  margin: auto;
+  padding: 35px 6%;
+  gap: 4%;
+  overflow: hidden;
+}
+.necklace-art {
+  position: relative;
+  height: min(650px, 70svh);
+  min-width: 0;
+  isolation: isolate;
+  border-radius: 220px 220px 16px 16px;
+  overflow: hidden;
+  background: #ead9d0;
+}
+.necklace-film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: calc(100% - 28px);
+  object-fit: cover;
+  object-position: 50% 45%;
+  z-index: 2;
+}
+.film-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.necklace-art canvas {
+  position: relative;
+  z-index: 2;
+}
+.necklace-halo {
+  position: absolute;
+  width: 82%;
+  aspect-ratio: 1;
+  border: 1px solid #c5a66f85;
+  border-radius: 50%;
+  left: 9%;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow:
+    0 0 85px #fff8,
+    inset 0 0 60px #fff6;
+}
+.necklace-halo::before,
+.necklace-halo::after {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border: 1px solid #c5a66f40;
+  border-radius: 50%;
+  transform: rotateX(45deg);
+}
+.necklace-halo::after {
+  inset: 18%;
+  transform: rotateY(55deg);
+}
+.necklace-light {
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    #fff9 50%,
+    transparent 65%
+  );
+  transform: translateX(-60%);
+  pointer-events: none;
+}
+.necklace-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: calc(100% - 28px);
+  object-fit: cover;
+  object-position: 50% 45%;
+  z-index: 1;
+}
+.necklace-fallback.scene-ready {
+  opacity: 0;
+}
+.necklace-art-note {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: #352b33;
+  background: #fcf8fbdf;
+  padding: 6px 10px;
+  min-height: 28px;
+  z-index: 3;
+}
+.necklace-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 500px;
+}
+.necklace-copy h2 {
+  font-size: clamp(36px, 4vw, 64px);
+  line-height: 1.14;
+  margin: 22px 0;
+  min-height: 3.45em;
+}
+.necklace-copy p {
+  font-size: 17px;
+  max-width: 350px;
+  min-height: 5.1em;
+}
+.necklace-copy > .text-link {
+  margin-top: 25px;
+  display: flex;
+  width: max-content;
+  min-height: 44px;
+}
+.necklace-chapters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 36px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.necklace-chapters > span:not(:last-child) {
+  opacity: 0.45;
+  padding-bottom: 6px;
+  border-bottom: 1px solid transparent;
+}
+.necklace-chapters .active {
+  opacity: 1 !important;
+  color: var(--rose);
+  border-color: var(--rose) !important;
+}
+.necklace-chapters > svg {
+  margin-left: 12px;
+}
+@media (max-width: 767px) {
+  .necklace-story {
+    height: 190svh;
+  }
+  .necklace-stage {
+    --story-top: 84px;
+    top: 85px;
+    min-height: calc(100svh - 85px);
+    padding: 15px 6% 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .necklace-art {
+    width: 100%;
+    height: 36svh;
+    min-height: 220px;
+    flex-shrink: 0;
+    border-radius: 100px 100px 12px 12px;
+  }
+  .necklace-art-note {
+    font-size: 10px;
+  }
+  .necklace-copy {
+    width: 100%;
+    max-width: 450px;
+  }
+  .necklace-copy > .eyebrow {
+    font-size: 11px;
+  }
+  .necklace-copy h2 {
+    font-size: 34px;
+    margin: 12px 0;
+    min-height: 2.3em;
+  }
+  .necklace-copy p {
+    font-size: 15px;
+    line-height: 1.55;
+    margin-bottom: 16px;
+    min-height: 3.1em;
+  }
+  .necklace-chapters {
+    margin-top: 18px;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .necklace-copy > .text-link {
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .necklace-copy .primary {
+    min-height: 46px;
+    padding: 10px 18px;
+  }
+}
+@media (max-width: 360px) {
+  .necklace-copy h2 {
+    font-size: 30px;
+  }
+  .necklace-art {
+    height: 30svh;
+    min-height: 190px;
+  }
+  .necklace-copy p {
+    font-size: 14px;
+  }
+  .necklace-chapters {
+    gap: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .necklace-story {
+    height: auto;
+  }
+  .necklace-stage {
+    position: relative;
+    top: auto;
+    min-height: 0;
+    padding-block: 45px;
+  }
+  .necklace-light,
+  .necklace-chapters,
+  .film-toggle {
+    display: none;
+  }
+  .necklace-copy h2 {
+    min-height: 0;
+  }
+  .necklace-copy p {
+    min-height: 0;
+  }
+}
+@media (max-height: 740px) and (prefers-reduced-motion: no-preference) {
+  .necklace-story {
+    height: auto;
+  }
+  .necklace-stage {
+    position: relative;
+    top: auto;
+    min-height: 0;
+  }
+  .necklace-art {
+    height: clamp(220px, 35svh, 350px);
+  }
+  .necklace-chapters {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .necklace-copy h2 {
+    animation: salon-entry 0.5s ease-out both;
+  }
+}
+#necklace-collection {
+  scroll-margin-top: 125px;
+}
+.necklace-story.is-flowing {
+  height: auto;
+}
+.is-flowing .necklace-stage {
+  position: relative;
+  top: auto;
+  min-height: 0;
+}
+.is-flowing .necklace-chapters {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}
