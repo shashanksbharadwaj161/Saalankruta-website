@@ -29,7 +29,7 @@ class SafeScene extends Component<
   }
 }
 
-/** Stable editorial copy and a short cinema-only pin keep the whole film visible. */
+/** A wide film rests briefly on a native sticky track while the visitor scrolls. */
 export default function NecklaceStory({
   paused,
   onPauseChange,
@@ -71,126 +71,96 @@ export default function NecklaceStory({
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    let cancelled = false,
-      dispose: (() => void) | undefined;
-    const initialHash = location.hash;
-    const initialScroll = scrollY;
-    let interacted = false;
-    const markInteraction = () => {
-      interacted = true;
+    const track = node.querySelector<HTMLElement>(".necklace-track");
+    const cinema = node.querySelector<HTMLElement>(".necklace-cinema");
+    const art = node.querySelector<HTMLElement>(".necklace-art");
+    if (!track || !cinema || !art) return;
+    const header = document.querySelector<HTMLElement>(".boutique-header");
+    const caption = cinema.querySelector<HTMLElement>(
+      ".necklace-cinema-footer",
+    );
+    const controls = cinema.querySelector<HTMLElement>(
+      ".necklace-film-actions",
+    );
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    let disposed = false,
+      frame = 0,
+      measureFrame = 0,
+      top = 88,
+      distance = 0,
+      sticky = true;
+    const sync = () => {
+      frame = 0;
+      if (disposed || motion.matches) return;
+      const rect = track.getBoundingClientRect();
+      // No scroll interception, fixed positioning, or pin-spacer refreshes.
+      // The last 10% lets the final decoded frame settle before the track releases.
+      const travel = sticky
+        ? distance * 0.9
+        : Math.max(160, rect.height - top - innerHeight * 0.18);
+      const next = Math.min(1, Math.max(0, (top - rect.top) / travel));
+      if (Math.abs(progress.current - next) < 0.0001) return;
+      progress.current = next;
+      invalidate.current?.();
     };
-    window.addEventListener("wheel", markInteraction, { passive: true });
-    window.addEventListener("touchstart", markInteraction, { passive: true });
-    window.addEventListener("keydown", markInteraction);
-    (async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-      if (cancelled) return;
-      gsap.registerPlugin(ScrollTrigger);
-      const cinema = node.querySelector<HTMLElement>(".necklace-cinema");
-      if (!cinema) return;
-      const header = document.querySelector<HTMLElement>(".boutique-header");
-      const caption = cinema.querySelector<HTMLElement>(
-        ".necklace-cinema-footer",
+    const schedule = () => {
+      if (!disposed && !frame) frame = requestAnimationFrame(sync);
+    };
+    const measure = () => {
+      measureFrame = 0;
+      if (disposed) return;
+      const height = Math.ceil(header?.getBoundingClientRect().height || 80);
+      const chrome = Math.ceil(
+        (caption?.getBoundingClientRect().height || 0) +
+          (controls?.getBoundingClientRect().height || 0),
       );
-      const controls = cinema.querySelector<HTMLElement>(
-        ".necklace-film-actions",
+      node.style.setProperty("--cinema-header-offset", height + "px");
+      node.style.setProperty("--cinema-chrome-height", chrome + "px");
+      top = height + 8;
+      const width = art.getBoundingClientRect().width;
+      const minimumMedia = innerWidth < 768 ? (width * 9) / 16 : width / 2.8;
+      // Short or very wide viewports use ordinary flow rather than an excessive crop.
+      sticky =
+        !motion.matches && innerHeight - top - chrome - 8 >= minimumMedia;
+      node.dataset.cinemaSticky = String(sticky);
+      distance = Math.max(
+        1,
+        parseFloat(getComputedStyle(track, "::after").height),
       );
-      const measure = () => {
-        const height = Math.ceil(header?.getBoundingClientRect().height || 80);
-        const chrome = Math.ceil(
-          (caption?.getBoundingClientRect().height || 0) +
-            (controls?.getBoundingClientRect().height || 0),
-        );
-        node.style.setProperty("--cinema-header-offset", height + "px");
-        node.style.setProperty("--cinema-chrome-height", chrome + "px");
-        return height;
-      };
-      measure();
-      const media = gsap.matchMedia();
-      media.add("(prefers-reduced-motion: no-preference)", () => {
-        const sync = (value: number) => {
-          // The final 16% of the short pin holds the last frame while decoding settles.
-          progress.current = Math.min(1, Math.max(0, value / 0.84));
-          invalidate.current?.();
-        };
-        ScrollTrigger.create({
-          id: "saalankruta-necklace-film",
-          trigger: cinema,
-          pin: cinema,
-          pinSpacing: true,
-          start: () => "top " + (measure() + 8) + "px",
-          end: () => "+=" + Math.round(innerHeight * 0.9),
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => sync(self.progress),
-          onRefresh: (self) => sync(self.progress),
-        });
-        return () => {
-          progress.current = 0;
-        };
-      });
-      let frame = 0;
-      const refresh = () => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          if (cancelled) return;
-          measure();
-          ScrollTrigger.refresh();
-        });
-      };
-      const observer = new ResizeObserver(refresh);
-      if (header) observer.observe(header);
-      if (caption) observer.observe(caption);
-      if (controls) observer.observe(controls);
-      window.addEventListener("resize", refresh);
-      document.fonts.ready.then(refresh);
-      // Deep links loaded before React mounts must account for the new pin spacer.
-      const alignInitialHash = () => {
-        if (
-          cancelled ||
-          interacted ||
-          !initialHash ||
-          location.hash !== initialHash
-        )
-          return;
-        if (Math.abs(scrollY - initialScroll) > 2) return;
-        let id: string;
-        try {
-          id = decodeURIComponent(initialHash.slice(1));
-        } catch {
-          return;
-        }
-        ScrollTrigger.refresh();
-        document
-          .getElementById(id)
-          ?.scrollIntoView({ behavior: "instant", block: "start" });
-      };
-      document.fonts.ready.then(() => requestAnimationFrame(alignInitialHash));
-      dispose = () => {
-        cancelAnimationFrame(frame);
-        observer.disconnect();
-        window.removeEventListener("resize", refresh);
-        media.revert();
-        node.style.removeProperty("--cinema-header-offset");
-        node.style.removeProperty("--cinema-chrome-height");
-      };
-    })();
+      schedule();
+    };
+    const scheduleMeasure = () => {
+      if (!disposed && !measureFrame)
+        measureFrame = requestAnimationFrame(measure);
+    };
+    const observer = new ResizeObserver(scheduleMeasure);
+    if (header) observer.observe(header);
+    if (caption) observer.observe(caption);
+    if (controls) observer.observe(controls);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", scheduleMeasure, { passive: true });
+    window.addEventListener("pageshow", scheduleMeasure);
+    motion.addEventListener("change", scheduleMeasure);
+    document.fonts.ready.then(scheduleMeasure);
+    measure();
     return () => {
-      cancelled = true;
-      dispose?.();
-      window.removeEventListener("wheel", markInteraction);
-      window.removeEventListener("touchstart", markInteraction);
-      window.removeEventListener("keydown", markInteraction);
-      invalidate.current = null;
+      disposed = true;
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(measureFrame);
+      observer.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", scheduleMeasure);
+      window.removeEventListener("pageshow", scheduleMeasure);
+      motion.removeEventListener("change", scheduleMeasure);
+      node.style.removeProperty("--cinema-header-offset");
+      node.style.removeProperty("--cinema-chrome-height");
     };
   }, []);
 
   return (
     <section
       className="necklace-story"
+      data-cinema-sticky="true"
       ref={ref}
       aria-labelledby="necklace-story-title"
     >
@@ -220,57 +190,61 @@ export default function NecklaceStory({
           </div>
         </div>
 
-        <div className="necklace-cinema">
-          <div className="necklace-art" aria-hidden="true">
-            <img
-              className={
-                "necklace-fallback " + (enabled && ready ? "scene-ready" : "")
-              }
-              src="/media/necklace-poster.jpg"
-              alt=""
-              loading="eager"
-              fetchPriority="high"
-            />
-            {enabled && (
-              <SafeScene failed={() => setReady(false)}>
-                <Suspense fallback={null}>
-                  <Scene
-                    progress={progress}
-                    invalidate={invalidate}
-                    ready={() => setReady(true)}
-                    failed={() => setReady(false)}
-                    paused={paused}
-                    frozenTime={retainedTime}
-                  />
-                </Suspense>
-              </SafeScene>
-            )}
-          </div>
-          <div className="necklace-cinema-footer">
-            <div className="necklace-caption">
-              <p>
-                Find a piece for your everyday. Or a day you will always
-                remember.
-              </p>
-              <span className="necklace-art-note">
-                Brand film · imagined jewellery
-              </span>
-              <p className="necklace-scroll-cue">Scroll to move the necklace</p>
+        <div className="necklace-track">
+          <div className="necklace-cinema">
+            <div className="necklace-art" aria-hidden="true">
+              <img
+                className={
+                  "necklace-fallback " + (enabled && ready ? "scene-ready" : "")
+                }
+                src="/media/necklace-poster.jpg"
+                alt=""
+                loading="eager"
+                fetchPriority="high"
+              />
+              {enabled && (
+                <SafeScene failed={() => setReady(false)}>
+                  <Suspense fallback={null}>
+                    <Scene
+                      progress={progress}
+                      invalidate={invalidate}
+                      ready={() => setReady(true)}
+                      failed={() => setReady(false)}
+                      paused={paused}
+                      frozenTime={retainedTime}
+                    />
+                  </Suspense>
+                </SafeScene>
+              )}
             </div>
-          </div>
-          <div className="necklace-film-actions">
-            <button
-              className="film-toggle"
-              onClick={() => onPauseChange(!paused)}
-              aria-pressed={paused}
-              aria-label={paused ? "Resume motion" : "Pause motion"}
-            >
-              {paused ? <Play size={13} /> : <Pause size={13} />}
-              {paused ? "Resume motion" : "Pause motion"}
-            </button>
-            <a href="#necklace-collection" className="necklace-skip">
-              Go to the collection <ArrowDown size={14} strokeWidth={1.5} />
-            </a>
+            <div className="necklace-cinema-footer">
+              <div className="necklace-caption">
+                <p>
+                  Find a piece for your everyday. Or a day you will always
+                  remember.
+                </p>
+                <span className="necklace-art-note">
+                  Brand film · imagined jewellery
+                </span>
+                <p className="necklace-scroll-cue">
+                  Scroll to move the necklace
+                </p>
+              </div>
+            </div>
+            <div className="necklace-film-actions">
+              <button
+                className="film-toggle"
+                onClick={() => onPauseChange(!paused)}
+                aria-pressed={paused}
+                aria-label={paused ? "Resume motion" : "Pause motion"}
+              >
+                {paused ? <Play size={13} /> : <Pause size={13} />}
+                {paused ? "Resume motion" : "Pause motion"}
+              </button>
+              <a href="#necklace-collection" className="necklace-skip">
+                Go to the collection <ArrowDown size={14} strokeWidth={1.5} />
+              </a>
+            </div>
           </div>
         </div>
       </div>

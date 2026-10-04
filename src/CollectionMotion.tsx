@@ -72,12 +72,28 @@ export default function CollectionMotion() {
         );
         return () => context.revert();
       });
-      let frame = 0;
+      let frame = 0,
+        previousWidth = -1,
+        previousHeight = -1;
       const refresh = () => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+        if (cancelled || frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          if (!cancelled) ScrollTrigger.refresh();
+        });
       };
-      const observer = new ResizeObserver(refresh);
+      const observer = new ResizeObserver(([entry]) => {
+        if (!entry) return;
+        const { width, height } = entry.contentRect;
+        if (
+          Math.abs(width - previousWidth) < 0.5 &&
+          Math.abs(height - previousHeight) < 0.5
+        )
+          return;
+        previousWidth = width;
+        previousHeight = height;
+        refresh();
+      });
       const main = document.querySelector("main");
       if (main) observer.observe(main);
       document.fonts.ready.then(() => {

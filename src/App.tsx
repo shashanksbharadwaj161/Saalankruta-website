@@ -62,7 +62,40 @@ function useTitle(title: string) {
 function ScrollReset() {
   const { pathname, search, hash, key } = useLocation();
   useEffect(() => {
-    if (!hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (!hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      return;
+    }
+    let cancelled = false,
+      frame = 0;
+    const cancel = () => {
+      cancelled = true;
+    };
+    window.addEventListener("wheel", cancel, { passive: true });
+    window.addEventListener("touchstart", cancel, { passive: true });
+    window.addEventListener("keydown", cancel);
+    // The initial document has no React content for the browser's fragment jump.
+    // Align once after fonts/layout settle; never override an ongoing user gesture.
+    document.fonts.ready.then(() => {
+      if (cancelled) return;
+      frame = requestAnimationFrame(() => {
+        if (cancelled) return;
+        try {
+          document
+            .getElementById(decodeURIComponent(hash.slice(1)))
+            ?.scrollIntoView({ block: "start", behavior: "instant" });
+        } catch {
+          // Malformed fragments leave ordinary page navigation available.
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      window.removeEventListener("wheel", cancel);
+      window.removeEventListener("touchstart", cancel);
+      window.removeEventListener("keydown", cancel);
+    };
   }, [pathname, search, hash, key]);
   return null;
 }
@@ -1952,13 +1985,16 @@ function About({
         </button>
       </div>
       <div className="about-grid">
-        <img
-          src="/brand-emblem.png"
-          alt="Saalankruta crest — Every Woman's Dream"
-          width="2000"
-          height="2000"
-          loading="lazy"
-        />
+        <div className="about-crest">
+          <img
+            src="/brand-emblem-transparent.png"
+            alt="Saalankruta crest — Every Woman's Dream"
+            width="2000"
+            height="2000"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
         <div>
           <h2>
             A place for tradition

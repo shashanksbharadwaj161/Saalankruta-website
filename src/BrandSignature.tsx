@@ -20,7 +20,7 @@ export default function BrandSignature() {
       className={`brand-signature brand-signature-seal${visible ? " is-revealed" : ""}`}
     >
       <img
-        src="/brand-emblem.png"
+        src="/brand-emblem-transparent.png"
         width="2000"
         height="2000"
         alt="Saalankruta crest. Every Woman's Dream."

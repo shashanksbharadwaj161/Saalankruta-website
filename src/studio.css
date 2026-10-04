@@ -73,6 +73,9 @@ textarea,
 .atelier-home {
   overflow: clip;
 }
+.atelier-home .wrap {
+  max-width: none;
+}
 .atelier-app {
   position: relative;
   isolation: isolate;
@@ -441,9 +444,44 @@ textarea,
 .atelier-footer .footer-top a {
   min-height: 38px;
 }
-/* The owner's complete square crest is a compact seal, with no crop or shader overlay. */
+/* Exact white/gold artwork; a fading wine scrim keeps it legible over pale rose. */
+.about-crest,
 .atelier-footer .brand-signature.brand-signature-seal {
-  width: 160px;
+  position: relative;
+  isolation: isolate;
+}
+.about-crest::before,
+.atelier-footer .brand-signature.brand-signature-seal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse closest-side at 50% 50%,
+    rgb(91 36 66 / 94%) 0%,
+    rgb(111 48 79 / 88%) 45%,
+    rgb(138 72 102 / 60%) 65%,
+    rgb(157 98 125 / 20%) 85%,
+    transparent 100%
+  );
+}
+.about-crest {
+  width: 100%;
+  max-width: 520px;
+  justify-self: center;
+  aspect-ratio: 1;
+}
+.about-grid .about-crest > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgb(53 24 41 / 48%));
+}
+.atelier-footer .brand-signature.brand-signature-seal {
+  width: 200px;
   max-width: 100%;
   aspect-ratio: 1;
   margin: 0 0 22px;
@@ -456,6 +494,7 @@ textarea,
   margin: 0;
   object-fit: contain;
   object-position: center;
+  filter: drop-shadow(0 1px 1px rgb(53 24 41 / 48%));
 }
 .atelier-footer .brand-signature-seal.is-revealed {
   animation: brand-seal-entrance 650ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
@@ -472,7 +511,7 @@ textarea,
 }
 @media (max-width: 700px) {
   .atelier-footer .brand-signature.brand-signature-seal {
-    width: 144px;
+    width: 180px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

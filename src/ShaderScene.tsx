@@ -137,7 +137,7 @@ export default function ShaderScene({
 }) {
   return (
     <ShaderGradientCanvas
-      pixelDensity={1}
+      pixelDensity={0.7}
       pointerEvents="none"
       powerPreference="low-power"
       style={{ position: "absolute", inset: 0 }}
