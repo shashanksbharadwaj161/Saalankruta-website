@@ -37,6 +37,8 @@ import {
   Package,
   Mail,
   ArrowLeft,
+  Pause,
+  Play,
 } from "lucide-react";
 import { useStore } from "./store";
 import { api } from "./api";
@@ -179,9 +181,14 @@ function ProductCard({ product: p }: { product: Product }) {
     </article>
   );
 }
-function Home() {
+function Home({
+  motionPaused,
+  setMotionPaused,
+}: {
+  motionPaused: boolean;
+  setMotionPaused: (paused: boolean) => void;
+}) {
   useTitle("Every woman's dream");
-  const [motionPaused, setMotionPaused] = useState(false);
   const { products, categories, loading } = useStore();
   const hero = products.find((p) => p.slug === "cz-necklace-4") || products[0];
   const bridal = products.find((p) => inCategory(p, "bridal-set", categories));
@@ -227,7 +234,6 @@ function Home() {
       <CollectionMotion />
       <NecklaceStory paused={motionPaused} onPauseChange={setMotionPaused} />
       <section className="atelier-manifesto">
-        <RoyalAtmosphere paused={motionPaused} />
         <div className="wrap">
           <div className="atelier-section-label">
             <span>FROM OUR BOUTIQUE</span>
@@ -363,7 +369,6 @@ function Home() {
         );
       })}
       <section className="atelier-visit">
-        <RoyalAtmosphere paused={motionPaused} />
         <div className="wrap">
           <h2>
             <KineticText text="Bengaluru." />
@@ -1920,7 +1925,13 @@ function WhatsApp() {
     </a>
   );
 }
-function About() {
+function About({
+  motionPaused,
+  setMotionPaused,
+}: {
+  motionPaused: boolean;
+  setMotionPaused: (paused: boolean) => void;
+}) {
   useTitle("Our story");
   return (
     <div className="wrap page">
@@ -1931,6 +1942,14 @@ function About() {
           <br />
           <em>Every piece, personal.</em>
         </h1>
+        <button
+          className="film-toggle"
+          aria-pressed={motionPaused}
+          onClick={() => setMotionPaused(!motionPaused)}
+        >
+          {motionPaused ? <Play size={13} /> : <Pause size={13} />}
+          {motionPaused ? "Resume motion" : "Pause motion"}
+        </button>
       </div>
       <div className="about-grid">
         <img
@@ -2037,7 +2056,10 @@ function LegacyRedirect() {
 }
 export default function App() {
   const { notice, setNotice } = useStore();
+  const [motionPaused, setMotionPaused] = useState(false);
   const location = useLocation();
+  const fluidPage =
+    location.pathname === "/" || location.pathname === "/about/";
   useEffect(() => {
     if (notice) {
       const timer = setTimeout(() => setNotice(""), 6000);
@@ -2060,7 +2082,10 @@ export default function App() {
     return () => document.removeEventListener("keydown", close);
   }, []);
   return (
-    <>
+    <div className="atelier-app" data-fluid={fluidPage}>
+      <div className="atelier-fluid-backdrop" aria-hidden="true">
+        <RoyalAtmosphere global active={fluidPage} paused={motionPaused} />
+      </div>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -2069,7 +2094,15 @@ export default function App() {
       <Header />
       <main id="main" key={location.pathname}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={
+              <Home
+                motionPaused={motionPaused}
+                setMotionPaused={setMotionPaused}
+              />
+            }
+          />
           <Route path="/shop/" element={<Collection />} />
           <Route path="/product-category/:slug/*" element={<Collection />} />
           <Route path="/product/:slug/" element={<ProductPage />} />
@@ -2082,7 +2115,15 @@ export default function App() {
           <Route path="/track-order/" element={<Tracking />} />
           <Route path="/order-confirmation/" element={<Confirmation />} />
           <Route path="/contact/" element={<Contact />} />
-          <Route path="/about/" element={<About />} />
+          <Route
+            path="/about/"
+            element={
+              <About
+                motionPaused={motionPaused}
+                setMotionPaused={setMotionPaused}
+              />
+            }
+          />
           {policyLinks.map((p) => (
             <Route
               key={p.slug}
@@ -2105,6 +2146,6 @@ export default function App() {
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

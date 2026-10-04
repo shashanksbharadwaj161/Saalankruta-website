@@ -3,6 +3,9 @@
   --boutique-header-height: 79px;
 }
 .header.boutique-header {
+  --glass-x: 50%;
+  --glass-y: 30%;
+  --glass-glint: 0;
   position: sticky;
   top: 0;
   z-index: var(--layer-header, 20);
@@ -12,13 +15,72 @@
   border: 0;
   border-bottom: 1px solid rgb(197 166 111 / 46%);
   border-radius: 0;
-  background: rgb(252 248 251 / 93%);
+  background: var(--surface);
   color: var(--rose-deep);
-  backdrop-filter: blur(22px) saturate(1.18);
-  -webkit-backdrop-filter: blur(22px) saturate(1.18);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 80%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 90%),
+    0 5px 20px rgb(124 49 88 / 5%);
+}
+.header.boutique-header::before,
+.header.boutique-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.header.boutique-header::before {
+  opacity: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 54%),
+      transparent 22%,
+      transparent 78%,
+      rgb(255 255 255 / 24%)
+    ),
+    linear-gradient(
+      115deg,
+      transparent 16%,
+      rgb(255 255 255 / 13%) 39%,
+      transparent 61%
+    );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 94%),
+    inset 0 -1px 0 rgb(197 166 111 / 28%);
+}
+.header.boutique-header::after {
+  opacity: var(--glass-glint);
+  background: radial-gradient(
+    ellipse 190px 72px at var(--glass-x) var(--glass-y),
+    rgb(255 255 255 / 35%),
+    rgb(255 243 250 / 13%) 52%,
+    transparent 78%
+  );
+  transition: opacity 350ms ease;
+}
+@supports (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .header.boutique-header {
+    background:
+      linear-gradient(
+        118deg,
+        rgb(255 255 255 / 26%),
+        rgb(250 224 237 / 10%) 47%,
+        rgb(255 255 255 / 19%)
+      ),
+      rgb(252 240 248 / 60%);
+    backdrop-filter: blur(20px) saturate(1.32);
+    -webkit-backdrop-filter: blur(20px) saturate(1.32);
+  }
+  .header.boutique-header::before {
+    opacity: 1;
+  }
 }
 .boutique-brand-row {
+  position: relative;
+  z-index: 1;
   max-width: 1600px;
   height: 78px;
   margin: 0 auto;
@@ -125,6 +187,7 @@
   display: none;
 }
 .boutique-mega {
+  z-index: 2;
   position: absolute;
   left: 0;
   right: 0;
@@ -652,6 +715,10 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  .header.boutique-header::before,
+  .header.boutique-header::after {
+    display: none;
+  }
   .boutique-navigation-overlay::backdrop,
   .boutique-search-overlay::backdrop {
     backdrop-filter: none;
@@ -659,6 +726,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .header.boutique-header::after {
+    opacity: 0;
+    transition: none;
+  }
   .boutique-header *,
   .boutique-navigation-overlay *,
   .boutique-search-overlay * {

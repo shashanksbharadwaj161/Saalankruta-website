@@ -216,6 +216,81 @@ export default function Header() {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
+    const glass = header.current;
+    const surface = glass?.querySelector<HTMLElement>(".boutique-brand-row");
+    if (!glass || !surface) return;
+    const supported =
+      CSS.supports("backdrop-filter", "blur(1px)") ||
+      CSS.supports("-webkit-backdrop-filter", "blur(1px)");
+    if (!supported) return;
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const transparency = matchMedia("(prefers-reduced-transparency: reduce)");
+    let frame = 0;
+    let x = 50;
+    let y = 30;
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      glass.style.setProperty("--glass-glint", "0");
+    };
+    const update = (clientX: number, clientY: number) => {
+      if (motion.matches || transparency.matches) return;
+      const bounds = glass.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
+      x = Math.max(
+        0,
+        Math.min(100, ((clientX - bounds.left) / bounds.width) * 100),
+      );
+      y = Math.max(
+        0,
+        Math.min(100, ((clientY - bounds.top) / bounds.height) * 100),
+      );
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        glass.style.setProperty("--glass-x", `${x}%`);
+        glass.style.setProperty("--glass-y", `${y}%`);
+        glass.style.setProperty("--glass-glint", "1");
+      });
+    };
+    const pointer = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") update(event.clientX, event.clientY);
+    };
+    const touch = (event: TouchEvent) => {
+      const point = event.touches[0];
+      if (point) update(point.clientX, point.clientY);
+    };
+    const passive = { passive: true } as const;
+    surface.addEventListener("pointerenter", pointer, passive);
+    surface.addEventListener("pointermove", pointer, passive);
+    surface.addEventListener("pointerdown", pointer, passive);
+    surface.addEventListener("pointerleave", reset, passive);
+    surface.addEventListener("pointerup", reset, passive);
+    surface.addEventListener("pointercancel", reset, passive);
+    surface.addEventListener("touchstart", touch, passive);
+    surface.addEventListener("touchmove", touch, passive);
+    surface.addEventListener("touchend", reset, passive);
+    surface.addEventListener("touchcancel", reset, passive);
+    motion.addEventListener("change", reset);
+    transparency.addEventListener("change", reset);
+    return () => {
+      reset();
+      surface.removeEventListener("pointerenter", pointer);
+      surface.removeEventListener("pointermove", pointer);
+      surface.removeEventListener("pointerdown", pointer);
+      surface.removeEventListener("pointerleave", reset);
+      surface.removeEventListener("pointerup", reset);
+      surface.removeEventListener("pointercancel", reset);
+      surface.removeEventListener("touchstart", touch);
+      surface.removeEventListener("touchmove", touch);
+      surface.removeEventListener("touchend", reset);
+      surface.removeEventListener("touchcancel", reset);
+      motion.removeEventListener("change", reset);
+      transparency.removeEventListener("change", reset);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!dropdown) return;
     const closeOutside = (event: PointerEvent) => {
       if (!header.current?.contains(event.target as Node)) setDropdown("");

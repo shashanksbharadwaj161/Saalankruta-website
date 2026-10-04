@@ -15,6 +15,14 @@ export type AtmosphereInput = {
   energy: number;
   updatedAt: number;
 };
+export type AtmosphereDynamics = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  energy: number;
+  time: number;
+};
 
 const Gradient = lazy(() => import("./ShaderScene"));
 class SafeEffect extends Component<
@@ -33,11 +41,23 @@ class SafeEffect extends Component<
 // Load only in view, stop when hidden, and use CSS when motion is reduced.
 export default function RoyalAtmosphere({
   paused = false,
+  active = true,
+  global: wholePage = false,
 }: {
   paused?: boolean;
+  active?: boolean;
+  global?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null),
     input = useRef<AtmosphereInput>({ x: 0, y: 0, energy: 0, updatedAt: 0 }),
+    dynamics = useRef<AtmosphereDynamics>({
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      energy: 0,
+      time: 0,
+    }),
     pausedRef = useRef(paused),
     [enabled, setEnabled] = useState(false);
   pausedRef.current = paused;
@@ -47,7 +67,8 @@ export default function RoyalAtmosphere({
     let visible = false;
     const update = () =>
       setEnabled(
-        visible &&
+        active &&
+          visible &&
           !document.hidden &&
           !reduced.matches &&
           !transparency.matches,
@@ -69,19 +90,33 @@ export default function RoyalAtmosphere({
       transparency.removeEventListener("change", update);
       document.removeEventListener("visibilitychange", update);
     };
-  }, []);
+  }, [active]);
   useEffect(() => {
-    const surface = ref.current?.parentElement;
+    const element = ref.current?.parentElement;
+    const surface = wholePage ? window : element;
     if (!enabled || !surface) return;
-    const reset = () => {
+    let frame = 0;
+    let point: { x: number; y: number; impulse: number } | null = null;
+    let touchId: number | null = null;
+    const release = () => {
+      if (!pausedRef.current && point) {
+        input.current.energy = Math.max(input.current.energy, point.impulse);
+      }
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      point = null;
       input.current.x = 0;
       input.current.y = 0;
-      input.current.energy = 0;
       input.current.updatedAt = 0;
     };
-    const update = (clientX: number, clientY: number, impulse = 0) => {
-      if (pausedRef.current) return;
-      const bounds = surface.getBoundingClientRect();
+    const flush = () => {
+      frame = 0;
+      if (!point || pausedRef.current) return;
+      const { x: clientX, y: clientY, impulse } = point;
+      point = null;
+      const bounds = wholePage
+        ? { left: 0, top: 0, width: innerWidth, height: innerHeight }
+        : element!.getBoundingClientRect();
       if (bounds.width <= 0 || bounds.height <= 0) return;
       const x = Math.max(
         -1,
@@ -94,14 +129,21 @@ export default function RoyalAtmosphere({
       const now = performance.now();
       const previous = input.current;
       const elapsed = Math.max(16, now - previous.updatedAt) / 1000;
-      const speed = Math.min(
-        1.2,
-        (Math.hypot(x - previous.x, y - previous.y) / elapsed) * 0.12,
-      );
+      const speed = previous.updatedAt
+        ? Math.min(
+            1.2,
+            (Math.hypot(x - previous.x, y - previous.y) / elapsed) * 0.12,
+          )
+        : 0;
       previous.energy = Math.max(previous.energy, speed, impulse);
       previous.x = x;
       previous.y = y;
       previous.updatedAt = now;
+    };
+    const update = (x: number, y: number, impulse = 0) => {
+      if (pausedRef.current) return;
+      point = { x, y, impulse: Math.max(point?.impulse || 0, impulse) };
+      if (!frame) frame = requestAnimationFrame(flush);
     };
     const pointer = (event: PointerEvent) => {
       // Touch events continue during native page scrolling; pointer events may cancel.
@@ -109,50 +151,66 @@ export default function RoyalAtmosphere({
         update(
           event.clientX,
           event.clientY,
-          event.type === "pointerdown" ? 0.7 : 0,
+          event.type === "pointerdown" ? 0.55 : 0,
         );
     };
     const touch = (event: TouchEvent) => {
-      const point = event.touches[0];
+      if (touchId === null)
+        touchId = event.changedTouches[0]?.identifier ?? null;
+      const point = [...event.touches].find((t) => t.identifier === touchId);
       if (point)
         update(
           point.clientX,
           point.clientY,
-          event.type === "touchstart" ? 0.9 : 0,
+          event.type === "touchstart" ? 0.7 : 0,
         );
     };
+    const endTouch = (event: TouchEvent) => {
+      if ([...event.changedTouches].some((t) => t.identifier === touchId)) {
+        touchId = null;
+        release();
+      }
+    };
     const leave = (event: PointerEvent) => {
-      if (event.pointerType !== "touch") reset();
+      if (event.pointerType !== "touch") release();
+    };
+    const wheel = (event: WheelEvent) => {
+      if (pausedRef.current) return;
+      input.current.energy = Math.max(
+        input.current.energy,
+        Math.min(0.6, Math.abs(event.deltaY) / 350),
+      );
     };
     const passive = { passive: true } as const;
-    surface.addEventListener("pointerenter", pointer, passive);
-    surface.addEventListener("pointermove", pointer, passive);
-    surface.addEventListener("pointerdown", pointer, passive);
-    surface.addEventListener("pointerleave", leave, passive);
-    surface.addEventListener("pointerup", reset, passive);
-    surface.addEventListener("touchstart", touch, passive);
-    surface.addEventListener("touchmove", touch, passive);
-    surface.addEventListener("touchend", reset, passive);
-    surface.addEventListener("touchcancel", reset, passive);
+    const events: [string, EventListener][] = [
+      ["pointerenter", pointer as EventListener],
+      ["pointermove", pointer as EventListener],
+      ["pointerdown", pointer as EventListener],
+      ["pointerleave", leave as EventListener],
+      ["pointerup", leave as EventListener],
+      ["pointercancel", leave as EventListener],
+      ["touchstart", touch as EventListener],
+      ["touchmove", touch as EventListener],
+      ["touchend", endTouch as EventListener],
+      ["touchcancel", endTouch as EventListener],
+      ["wheel", wheel as EventListener],
+    ];
+    events.forEach(([name, handler]) =>
+      surface.addEventListener(name, handler, passive),
+    );
     return () => {
-      reset();
-      surface.removeEventListener("pointerenter", pointer);
-      surface.removeEventListener("pointermove", pointer);
-      surface.removeEventListener("pointerdown", pointer);
-      surface.removeEventListener("pointerleave", leave);
-      surface.removeEventListener("pointerup", reset);
-      surface.removeEventListener("touchstart", touch);
-      surface.removeEventListener("touchmove", touch);
-      surface.removeEventListener("touchend", reset);
-      surface.removeEventListener("touchcancel", reset);
+      release();
+      events.forEach(([name, handler]) =>
+        surface.removeEventListener(name, handler),
+      );
     };
-  }, [enabled]);
+  }, [enabled, wholePage]);
   return (
     <div className="royal-atmosphere" ref={ref} aria-hidden="true">
       {enabled && (
         <SafeEffect>
           <Suspense fallback={null}>
-            <Gradient input={input} paused={paused} />
+            <Gradient input={input} dynamics={dynamics} paused={paused} />
           </Suspense>
         </SafeEffect>
       )}

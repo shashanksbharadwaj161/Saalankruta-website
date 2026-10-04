@@ -1,8 +1,17 @@
-/* A stable editorial row and an intact horizontal film on one rose canvas. */
+/* Stable copy frames a finite cinema pin; the intact film fits below the header. */
 .necklace-story {
+  --cinema-header-offset: var(--boutique-header-height, 80px);
+  --cinema-chrome-height: 160px;
+  --cinema-media-height: max(
+    80px,
+    calc(
+      100svh - var(--cinema-header-offset) - var(--cinema-chrome-height) - 16px
+    )
+  );
+  --cinema-frame-width: min(100%, calc(var(--cinema-media-height) * 16 / 9));
   position: relative;
   height: auto;
-  background: var(--surface, #fcf8fb);
+  background: transparent;
   color: var(--ink, #352b33);
 }
 .necklace-stage {
@@ -12,12 +21,7 @@
   margin: 0;
   padding: 0;
   isolation: isolate;
-  background: var(--rose-canvas, #f5e4ec);
-}
-.necklace-stage > .royal-atmosphere {
-  z-index: 0;
-  opacity: 0.65;
-  overflow: hidden;
+  background: transparent;
 }
 .necklace-heading {
   position: relative;
@@ -97,7 +101,8 @@
 }
 .necklace-art {
   position: relative;
-  width: 100%;
+  width: var(--cinema-frame-width);
+  margin-inline: auto;
   aspect-ratio: 16 / 9;
   height: auto;
   overflow: hidden;
@@ -125,11 +130,9 @@
 .necklace-cinema-footer {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 36px;
-  padding: 22px var(--page-gutter) 24px;
+  width: var(--cinema-frame-width);
+  margin-inline: auto;
+  padding: 15px 0 0;
   background: transparent;
 }
 .necklace-caption p {
@@ -146,10 +149,19 @@
   line-height: 1.5;
   color: var(--muted);
 }
+.necklace-caption .necklace-scroll-cue {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .necklace-film-actions {
   display: flex;
   align-items: center;
   gap: 28px;
+  width: var(--cinema-frame-width);
+  margin-inline: auto;
+  padding: 12px 0 16px;
 }
 .film-toggle,
 .necklace-skip {
@@ -214,6 +226,12 @@
   }
 }
 @media (max-width: 767px) {
+  .necklace-story {
+    --cinema-frame-width: min(
+      calc(100% - var(--page-gutter) - var(--page-gutter)),
+      calc(var(--cinema-media-height) * 16 / 9)
+    );
+  }
   .necklace-heading {
     padding: 25px var(--page-gutter) 23px;
   }
@@ -238,14 +256,12 @@
     gap: 24px;
   }
   .necklace-art {
-    width: calc(100% - var(--page-gutter) - var(--page-gutter));
-    margin-inline: var(--page-gutter);
+    width: var(--cinema-frame-width);
+    margin-inline: auto;
     border: 1px solid #c5a66f70;
   }
   .necklace-cinema-footer {
-    grid-template-columns: 1fr;
-    gap: 11px;
-    padding: 19px var(--page-gutter) 15px;
+    padding: 14px 0 0;
   }
   .necklace-caption p {
     font-size: 14px;
@@ -270,6 +286,9 @@
     transition: none;
   }
   .film-toggle {
+    display: none;
+  }
+  .necklace-scroll-cue {
     display: none;
   }
   html {

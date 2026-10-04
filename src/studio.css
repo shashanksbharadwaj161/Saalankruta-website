@@ -73,6 +73,50 @@ textarea,
 .atelier-home {
   overflow: clip;
 }
+.atelier-app {
+  position: relative;
+  isolation: isolate;
+}
+.atelier-app[data-fluid="true"] {
+  --muted: #503244;
+}
+.atelier-app[data-fluid="true"] del {
+  color: var(--muted);
+}
+.atelier-fluid-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--rose-canvas);
+}
+.atelier-fluid-backdrop > .royal-atmosphere {
+  z-index: 0;
+  opacity: 0.78;
+}
+.atelier-app[data-fluid="false"] main {
+  background: var(--surface);
+  display: flow-root;
+}
+.atelier-app[data-fluid="true"] .necklace-story,
+.atelier-app[data-fluid="true"] .necklace-stage,
+.atelier-app[data-fluid="true"] .atelier-manifesto,
+.atelier-app[data-fluid="true"] .atelier-visit {
+  background: transparent;
+}
+.atelier-app[data-fluid="true"] .collection-index,
+.atelier-app[data-fluid="true"] .atelier-edit {
+  position: relative;
+}
+.atelier-app[data-fluid="true"] .atelier-home {
+  background: transparent;
+}
+.atelier-app[data-fluid="true"] .atelier-footer,
+.atelier-app[data-fluid="true"] .atelier-footer .footer-top,
+.atelier-app[data-fluid="true"] .atelier-footer .footer-bottom,
+.atelier-app[data-fluid="true"] .footer-masthead {
+  background: rgb(255 249 252 / 72%);
+}
 .royal-atmosphere canvas {
   opacity: 1;
 }

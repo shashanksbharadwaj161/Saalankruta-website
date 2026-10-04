@@ -3,24 +3,40 @@ import { memo, useEffect, useRef, type RefObject } from "react";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, type Material, type Mesh } from "three";
-import type { AtmosphereInput } from "./RoyalAtmosphere";
+import type { AtmosphereInput, AtmosphereDynamics } from "./RoyalAtmosphere";
 
 // The installed ShaderGradient surface exposes these Three.js uniforms in userData.
 // Keep the motion driver isolated: uniforms and refs change, React does not render per frame.
 type GradientUniforms = Record<string, { value: number }>;
+const uniformNames = [
+  "uTime",
+  "uNoiseStrength",
+  "uNoiseDensity",
+  "uFrequency",
+  "uAmplitude",
+] as const;
+function readUniforms(material: Material): GradientUniforms | null {
+  const data = material.userData as GradientUniforms;
+  return uniformNames.every(
+    (name) => data[name] && Number.isFinite(data[name].value),
+  )
+    ? data
+    : null;
+}
 
 function SilkMotion({
   input,
+  dynamics,
   paused,
 }: {
   input: RefObject<AtmosphereInput>;
+  dynamics: RefObject<AtmosphereDynamics>;
   paused: boolean;
 }) {
   const scene = useThree((state) => state.scene);
   const setFrameloop = useThree((state) => state.setFrameloop);
   const invalidate = useThree((state) => state.invalidate);
   const mesh = useRef<Mesh | null>(null);
-  const state = useRef({ x: 0, y: 0, energy: 0, time: 0 });
   useEffect(() => {
     setFrameloop(paused ? "demand" : "always");
     invalidate();
@@ -28,8 +44,7 @@ function SilkMotion({
   }, [paused, setFrameloop, invalidate]);
 
   useFrame((_, delta) => {
-    if (paused) return;
-    if (!mesh.current) {
+    if (!mesh.current?.parent) {
       const surface = scene.getObjectByName("shadergradient-mesh");
       if (surface && "isMesh" in surface) mesh.current = surface as Mesh;
     }
@@ -38,32 +53,39 @@ function SilkMotion({
     const material = (
       Array.isArray(surface.material) ? surface.material[0] : surface.material
     ) as Material;
-    const uniforms = material.userData as GradientUniforms;
-    if (!uniforms.uTime || !uniforms.uNoiseStrength) return;
+    const uniforms = readUniforms(material);
+    if (!uniforms) return;
     const dt = Math.min(delta, 0.05);
-    const smooth = 1 - Math.exp(-dt * 3.2);
-    const current = state.current;
+    const current = dynamics.current;
     const target = input.current;
-    current.x += (target.x - current.x) * smooth;
-    current.y += (target.y - current.y) * smooth;
-    current.energy +=
-      (target.energy - current.energy) * (1 - Math.exp(-dt * 4.5));
-    target.energy *= Math.exp(-dt * 3.5);
-    current.time += dt * (0.45 + current.energy * 0.6);
+    if (!paused) {
+      // Damped spring motion carries momentum after a gesture without abrupt resets.
+      current.vx =
+        (current.vx + (target.x - current.x) * 22 * dt) * Math.exp(-dt * 8.5);
+      current.vy =
+        (current.vy + (target.y - current.y) * 22 * dt) * Math.exp(-dt * 8.5);
+      current.x += current.vx * dt;
+      current.y += current.vy * dt;
+      current.energy +=
+        (target.energy - current.energy) * (1 - Math.exp(-dt * 4));
+      target.energy *= Math.exp(-dt * 2.2);
+      current.time += dt * (0.3 + current.energy * 0.3);
+    }
 
     // Broad rose folds flow continuously; gestures add a soft, decaying swish.
     uniforms.uTime.value = current.time;
     uniforms.uNoiseStrength.value =
-      2.2 + current.energy * 1.05 + current.y * 0.16;
-    uniforms.uNoiseDensity.value = 0.85 + Math.abs(current.x) * 0.08;
-    uniforms.uFrequency.value = 2.4 + current.energy * 0.55;
-    uniforms.uAmplitude.value = 0.18 + current.energy * 0.17;
-    surface.position.x = current.x * 0.45 + Math.sin(current.time * 0.3) * 0.08;
-    surface.position.y = -current.y * 0.28;
-    surface.rotation.x = current.y * 0.07;
-    surface.rotation.y = -current.x * 0.07;
+      2.05 + current.energy * 0.36 + current.y * 0.09;
+    // Keep the spatial structure stable: gestures move folds rather than rebuilding noise.
+    uniforms.uNoiseDensity.value = 0.85;
+    uniforms.uFrequency.value = 2.4;
+    uniforms.uAmplitude.value = 0.18 + current.energy * 0.065;
+    surface.position.x = current.x * 0.22 + Math.sin(current.time * 0.3) * 0.08;
+    surface.position.y = -current.y * 0.16;
+    surface.rotation.x = current.y * 0.04;
+    surface.rotation.y = -current.x * 0.04;
     surface.rotation.z =
-      MathUtils.degToRad(24) + current.x * 0.09 - current.y * 0.035;
+      MathUtils.degToRad(24) + current.x * 0.055 - current.y * 0.025;
   });
   return null;
 }
@@ -106,9 +128,11 @@ const RoseSilk = memo(function RoseSilk() {
 // No orbit gestures, grain, HDR downloads, or transformations of product imagery.
 export default function ShaderScene({
   input,
+  dynamics,
   paused,
 }: {
   input: RefObject<AtmosphereInput>;
+  dynamics: RefObject<AtmosphereDynamics>;
   paused: boolean;
 }) {
   return (
@@ -119,7 +143,7 @@ export default function ShaderScene({
       style={{ position: "absolute", inset: 0 }}
     >
       <RoseSilk />
-      <SilkMotion input={input} paused={paused} />
+      <SilkMotion input={input} dynamics={dynamics} paused={paused} />
     </ShaderGradientCanvas>
   );
 }
