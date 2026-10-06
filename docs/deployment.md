@@ -26,6 +26,10 @@ For an isolated development installation only, `WP_ENVIRONMENT_TYPE=local`, `SAA
 
 Copy `server/config.example.php` outside `public_html` as `saalankruta-config.php`; replace placeholder values privately. The default session directory is a private sibling `saal-sessions`, with thirty-day cookie/session storage. Ensure Hostinger can create it, or set `SAALANKRUTA_SESSION_PATH` to an existing private writable directory. Cookies are Secure, HttpOnly and SameSite=Lax in production.
 
+For a nested Hostinger preview, the PHP gateway walks up to the enclosing `public_html` and keeps both default paths outside that main webroot. Explicit path overrides must also remain outside every public webroot. The `preview.saalankruta.com` hostname receives an `X-Robots-Tag: noindex, nofollow` response header.
+
+Hosting inspection on 6 October 2026 created `preview.saalankruta.com` at `/home/u574240605/domains/saalankruta.com/public_html/saal-preview`. Its private default files belong in `/home/u574240605/domains/saalankruta.com/`, not the preview folder or the main WordPress directory. `PUBLISH_DEPLOY_BRANCH=true` enables compiled releases in GitHub; it does not by itself deploy to Hostinger. The existing Hostinger GitHub app currently exposes a different repository and needs Saalankruta-specific access before connection. Do not select that other repository.
+
 Set the repository's `CATALOGUE_ORIGIN` Actions variable to the verified backend origin after migration. Build on `main`; the workflow prepares `deploy` and a downloadable storefront artifact. Connect Hostinger Git to `deploy` in the isolated preview first. Keep build output and the WooCommerce backend in different directories. Hostinger requires no Node process.
 
 Run `pnpm install --frozen-lockfile`, catalogue reconciliation, tests, PHP lint and build before promotion. Retain the previous compiled release as a rollback package. Document the exact Hostinger paths before configuring Git; do not deploy over an existing WordPress webroot until the backend migration and rollback have been verified.

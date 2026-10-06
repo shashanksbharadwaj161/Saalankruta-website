@@ -29,7 +29,7 @@ jobs:
         env:
           CATALOGUE_ORIGIN: ${{ vars.CATALOGUE_ORIGIN || 'https://saalankruta.com' }}
       - run: pnpm test
-      - run: php -l server/index.php && php -l plugin/saalankruta-headless.php
+      - run: php -l server/index.php && php -l server/private-path.php && php -l plugin/saalankruta-headless.php && php tests/private-path.php
       - run: pnpm build
       - uses: actions/upload-artifact@v4
         with:

@@ -150,6 +150,7 @@ await writeFile(
 );
 await mkdir("dist/api", { recursive: true });
 await copyFile("server/index.php", "dist/api/index.php");
+await copyFile("server/private-path.php", "dist/api/private-path.php");
 await copyFile("server/.htaccess", "dist/.htaccess");
 await writeFile(
   "dist/legacy.php",

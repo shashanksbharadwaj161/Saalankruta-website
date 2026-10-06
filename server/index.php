@@ -6,11 +6,14 @@ header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
 ini_set('display_errors', '0');
+require __DIR__.'/private-path.php';
+try {$privateBase=saalPrivateBase($_SERVER['DOCUMENT_ROOT']??'');}
+catch (RuntimeException $e) {http_response_code(503);echo json_encode(['message'=>'The private store storage is not configured.']);exit;}
 session_name('saal_session');
 ini_set('session.use_strict_mode','1');
 ini_set('session.use_only_cookies','1');
 ini_set('session.gc_maxlifetime','2592000');
-$sessionPath=getenv('SAALANKRUTA_SESSION_PATH')?:dirname($_SERVER['DOCUMENT_ROOT']).'/saal-sessions';
+$sessionPath=getenv('SAALANKRUTA_SESSION_PATH')?:$privateBase.'/saal-sessions';
 if(!is_dir($sessionPath)&&!mkdir($sessionPath,0700,true)){http_response_code(503);echo json_encode(['message'=>'The store session could not be opened.']);exit;}
 session_save_path($sessionPath);
 $local=getenv('SAALANKRUTA_ENV')==='local'&&in_array($_SERVER['REMOTE_ADDR']??'',['127.0.0.1','::1'],true);
@@ -30,7 +33,7 @@ if (!is_array($request)||!is_array($request['data']??null)) fail(400,'Invalid re
 $action=(string)($request['action']??'');
 $allowed=['catalogue','product','categories','me','cart','add-item','update-item','remove-item','apply-coupon','remove-coupon','update-customer','select-shipping-rate','checkout','payment-config','login','register','logout','password-reset','complete-reset','address','orders','wishlist','track','contact'];
 if (!in_array($action,$allowed,true)) fail(404,'Unknown operation.');
-$configPath=getenv('SAALANKRUTA_CONFIG') ?: dirname($_SERVER['DOCUMENT_ROOT']).'/saalankruta-config.php';
+$configPath=getenv('SAALANKRUTA_CONFIG') ?: $privateBase.'/saalankruta-config.php';
 if (!is_file($configPath)) fail(503,'The store service is not connected yet. Please contact the boutique.');
 $config=require $configPath;
 if (!is_array($config)||empty($config['backend'])||strlen($config['secret']??'')<32) fail(503,'The store service configuration is incomplete.');
