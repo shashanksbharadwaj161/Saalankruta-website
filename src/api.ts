@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 let csrf = "";
 let bootstrap: Promise<void> | null = null;
 export class ApiError extends Error {
@@ -14,7 +15,7 @@ export async function api<T>(
 ): Promise<T> {
   if (!csrf) {
     bootstrap ??= (async () => {
-      const boot = await fetch("/api/index.php?action=bootstrap", {
+      const boot = await fetch(asset("/api/index.php?action=bootstrap"), {
         credentials: "same-origin",
       });
       if (!boot.ok)
@@ -33,7 +34,7 @@ export async function api<T>(
       bootstrap = null;
     }
   }
-  const response = await fetch("/api/index.php", {
+  const response = await fetch(asset("/api/index.php"), {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },

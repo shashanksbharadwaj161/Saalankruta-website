@@ -146,9 +146,10 @@ await writeFile(
 );
 await writeFile(
   "dist/robots.txt",
-  `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n`,
+  `User-agent: *\nAllow: /\nDisallow: ${process.env.STOREFRONT_ASSET_BASE || '/'}api/\nSitemap: ${origin}/sitemap.xml\n`,
 );
 await mkdir("dist/api", { recursive: true });
+await writeFile("dist/storefront-routes.json", JSON.stringify(Object.fromEntries(routes.map(route=>[route.path, !!route.private]))));
 await copyFile("server/index.php", "dist/api/index.php");
 await copyFile("server/private-path.php", "dist/api/private-path.php");
 await copyFile("server/.htaccess", "dist/.htaccess");

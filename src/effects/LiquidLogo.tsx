@@ -1,4 +1,6 @@
 "use client";
+import { asset } from "../assets";
+
 import { useEffect, useRef } from "react";
 import fragment from "./shaders/liquid-logo.frag?raw";
 import vertex from "./shaders/liquid-logo.vert?raw";
@@ -90,7 +92,7 @@ export default function LiquidLogo() {
       loaded = true;
       update();
     };
-    image.src = "/logo.png";
+    image.src = asset("/logo.png");
     const resize = new ResizeObserver(() => {
       const rect = canvas.getBoundingClientRect();
       canvas.width = Math.max(1, Math.round(rect.width));

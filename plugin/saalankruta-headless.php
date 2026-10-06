@@ -18,7 +18,7 @@ final class Saalankruta_Headless {
   add_action('before_delete_post',function($id){if(get_post_type($id)==='product')self::catalogue_changed();});
   add_action('saalankruta_catalogue_rebuild',[self::class,'rebuild']);
   add_filter('retrieve_password_message',[self::class,'reset_message'],10,4);
-  add_action('admin_notices',function(){if(!defined('SAALANKRUTA_BRIDGE_SECRET'))echo '<div class="notice notice-warning"><p>Saalankruta headless bridge: configure the private bridge secret before connecting the storefront.</p></div>';});
+  add_action('admin_notices',function(){if(!defined('SAALANKRUTA_BRIDGE_SECRET')&&get_template()!=='saalankruta')echo '<div class="notice notice-info"><p>Saalankruta commerce: activate the coded storefront theme for this WordPress installation, or configure a private bridge secret for a separate storefront.</p></div>';});
  }
  public static function verify(WP_REST_Request $r) {
   if(!defined('SAALANKRUTA_BRIDGE_SECRET')||strlen(SAALANKRUTA_BRIDGE_SECRET)<32)return new WP_Error('unconfigured','Store service is not configured.',['status'=>503]);

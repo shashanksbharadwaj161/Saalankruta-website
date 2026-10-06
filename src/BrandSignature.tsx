@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import { useEffect, useRef, useState } from "react";
 export default function BrandSignature() {
   const ref = useRef<HTMLDivElement>(null),
@@ -20,7 +21,7 @@ export default function BrandSignature() {
       className={`brand-signature brand-signature-seal${visible ? " is-revealed" : ""}`}
     >
       <img
-        src="/brand-emblem-transparent.png"
+        src={asset("/brand-emblem-transparent.png")}
         width="2000"
         height="2000"
         alt="Saalankruta crest. Every Woman's Dream."

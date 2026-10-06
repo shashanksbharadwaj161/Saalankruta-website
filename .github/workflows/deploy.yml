@@ -29,17 +29,18 @@ jobs:
         env:
           CATALOGUE_ORIGIN: ${{ vars.CATALOGUE_ORIGIN || 'https://saalankruta.com' }}
       - run: pnpm test
-      - run: php -l server/index.php && php -l server/private-path.php && php -l plugin/saalankruta-headless.php && php tests/private-path.php
-      - run: pnpm build
+      - run: php -l server/index.php && php -l server/private-path.php && php -l server/wordpress-adapter.php && php -l plugin/saalankruta-headless.php && php tests/private-path.php
+      - run: php -l wordpress-theme/index.php && php -l wordpress-theme/functions.php && php tests/wordpress-theme.php
+      - run: pnpm build:wordpress
       - uses: actions/upload-artifact@v4
         with:
           name: hostinger-storefront
-          path: dist
+          path: .wordpress-release/saalankruta
           include-hidden-files: true
       - name: Publish deploy branch
         if: vars.PUBLISH_DEPLOY_BRANCH == 'true'
         run: |
-          cd dist
+          cd .wordpress-release/saalankruta
           git init
           git checkout -b deploy
           git config user.name "Saalankruta build"

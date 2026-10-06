@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import {
   createContext,
   useContext,
@@ -65,8 +66,8 @@ export function StoreProvider({
       let snapshot: Product[] = [];
       try {
         const [p, c] = await Promise.all([
-          fetch("/catalogue.json").then((r) => r.json()),
-          fetch("/categories.json").then((r) => r.json()),
+          fetch(asset("/catalogue.json")).then((r) => r.json()),
+          fetch(asset("/categories.json")).then((r) => r.json()),
         ]);
         snapshot = p;
         if (alive) {

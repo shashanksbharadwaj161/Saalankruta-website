@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import CollectionMotion from "./CollectionMotion";
 import KineticText from "./KineticText";
 import NecklaceStory from "./NecklaceStory";
@@ -180,7 +181,7 @@ function ProductCard({ product: p }: { product: Product }) {
             src={
               p.images[0]?.thumbnail ||
               p.images[0]?.src ||
-              "/product-placeholder.svg"
+              asset("/product-placeholder.svg")
             }
             alt={p.images[0]?.alt || text(p.name)}
             loading="lazy"
@@ -666,7 +667,7 @@ function ProductPage() {
             aria-label="Enlarge product image"
           >
             <img
-              src={p.images[image]?.src || "/product-placeholder.svg"}
+              src={p.images[image]?.src || asset("/product-placeholder.svg")}
               alt={p.images[image]?.alt || text(p.name)}
             />
             <span>
@@ -862,7 +863,7 @@ function ProductPage() {
             <X />
           </button>
           <img
-            src={p.images[image]?.src || "/product-placeholder.svg"}
+            src={p.images[image]?.src || asset("/product-placeholder.svg")}
             alt={text(p.name)}
           />
         </Modal>
@@ -1029,7 +1030,7 @@ function CartPage() {
                     item.images[0]?.thumbnail ||
                     item.images[0]?.src ||
                     products.find((p) => p.id === item.id)?.images[0]?.src ||
-                    "/product-placeholder.svg"
+                    asset("/product-placeholder.svg")
                   }
                   alt={text(item.name)}
                 />
@@ -1515,7 +1516,7 @@ function Checkout() {
                     i.images[0]?.thumbnail ||
                     i.images[0]?.src ||
                     products.find((p) => p.id === i.id)?.images[0]?.src ||
-                    "/product-placeholder.svg"
+                    asset("/product-placeholder.svg")
                   }
                   alt=""
                 />
@@ -1936,7 +1937,7 @@ function Contact() {
 function WhatsApp() {
   const [number, setNumber] = useState("");
   useEffect(() => {
-    fetch("/store-config.json")
+    fetch(asset("/store-config.json"))
       .then((r) => r.json())
       .then((c) => {
         if (/^91\d{10}$/.test(c.whatsapp || "")) setNumber(c.whatsapp);
@@ -1987,7 +1988,7 @@ function About({
       <div className="about-grid">
         <div className="about-crest">
           <img
-            src="/brand-emblem-transparent.png"
+            src={asset("/brand-emblem-transparent.png")}
             alt="Saalankruta crest — Every Woman's Dream"
             width="2000"
             height="2000"

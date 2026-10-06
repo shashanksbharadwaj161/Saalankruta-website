@@ -33,17 +33,27 @@ if (!is_array($request)||!is_array($request['data']??null)) fail(400,'Invalid re
 $action=(string)($request['action']??'');
 $allowed=['catalogue','product','categories','me','cart','add-item','update-item','remove-item','apply-coupon','remove-coupon','update-customer','select-shipping-rate','checkout','payment-config','login','register','logout','password-reset','complete-reset','address','orders','wishlist','track','contact'];
 if (!in_array($action,$allowed,true)) fail(404,'Unknown operation.');
+$wordpress=is_file(__DIR__.'/wordpress-host.php');
+if ($wordpress) {
+ define('SAALANKRUTA_GATEWAY',true);
+ require __DIR__.'/wordpress-host.php';
+ $config=saalWordPressConfig();
+} else {
 $configPath=getenv('SAALANKRUTA_CONFIG') ?: $privateBase.'/saalankruta-config.php';
 if (!is_file($configPath)) fail(503,'The store service is not connected yet. Please contact the boutique.');
 $config=require $configPath;
 if (!is_array($config)||empty($config['backend'])||strlen($config['secret']??'')<32) fail(503,'The store service configuration is incomplete.');
 $url=rtrim($config['backend'],'/').'/wp-json/saalankruta/v1/bridge';
 if (!str_starts_with($url,'https://')&&!($local&&parse_url($url,PHP_URL_HOST)==='127.0.0.1')) fail(503,'Secure backend connection required.');
+}
 if ($action==='checkout' && empty($config['ordering_enabled'])) fail(409,'Online ordering is not open yet. Please contact the boutique.');
 $window=(int)(time()/60);
 if (($_SESSION['rate_window']??0)!==$window){$_SESSION['rate_window']=$window;$_SESSION['rate_count']=0;}
 if (++$_SESSION['rate_count']>90) fail(429,'Too many requests. Please wait a moment.');
 $payload=json_encode(['action'=>$action,'data'=>$request['data'],'user_token'=>$_SESSION['user_token']??'','cart_token'=>$_SESSION['cart_token']??'','checkout_session'=>$_SESSION['checkout_session'],'client'=>hash_hmac('sha256',$_SERVER['REMOTE_ADDR']??'unknown',$config['secret'])],JSON_UNESCAPED_SLASHES);
+if ($wordpress) {
+ $result=saalWordPressRequest($payload);$status=$result['status'];$body=$result['body'];
+} else {
 $timestamp=(string)time();$nonce=bin2hex(random_bytes(16));
 $signature=hash_hmac('sha256',$timestamp.'.'.$nonce.'.'.$payload,$config['secret']);
 $curl=curl_init($url);
@@ -51,6 +61,7 @@ curl_setopt_array($curl,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT
 $response=curl_exec($curl);$status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);$err=curl_errno($curl);curl_close($curl);
 if ($err||$status===0) fail(502,'The boutique is temporarily unavailable. Please try again.');
 $body=json_decode((string)$response,true);
+}
 if (!is_array($body)&&!($action==='me'&&$body===null&&$status===200)) fail(502,'The store service returned an invalid response.');
 if (isset($body['_cart_token'])){$_SESSION['cart_token']=$body['_cart_token'];unset($body['_cart_token']);}
 if (isset($body['_user_token'])){session_regenerate_id(true);$_SESSION['user_token']=$body['_user_token'];unset($body['_user_token']);}

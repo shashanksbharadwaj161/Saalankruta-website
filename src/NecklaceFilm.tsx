@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import { useEffect, useRef, type RefObject } from "react";
 
 /** Scroll-driven brand art, with a single coalesced seek targeting the latest progress. */
@@ -121,11 +122,11 @@ export default function NecklaceFilm({
       muted
       playsInline
       preload="auto"
-      poster="/media/necklace-poster.jpg"
+      poster={asset("/media/necklace-poster.jpg")}
       tabIndex={-1}
       aria-hidden="true"
     >
-      <source src="/media/necklace-film.mp4" type="video/mp4" />
+      <source src={asset("/media/necklace-film.mp4")} type="video/mp4" />
     </video>
   );
 }

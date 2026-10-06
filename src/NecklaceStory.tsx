@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import {
   Component,
   lazy,
@@ -197,7 +198,7 @@ export default function NecklaceStory({
                 className={
                   "necklace-fallback " + (enabled && ready ? "scene-ready" : "")
                 }
-                src="/media/necklace-poster.jpg"
+                src={asset("/media/necklace-poster.jpg")}
                 alt=""
                 loading="eager"
                 fetchPriority="high"

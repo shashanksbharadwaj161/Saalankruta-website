@@ -1,9 +1,12 @@
 # Verification record
 
-Latest visual revision verified locally on 5 October 2026, with backend/catalogue integration checks retained from 4 October. This is a development release, not a production launch certification.
+WordPress-hosted integration verified locally on 6 October 2026, with visual checks retained from 5 October and earlier commerce checks from 4 October. This is a development release, not a production launch certification.
 
 ## Completed checks
 
+- The compiled frontend runs through PHP and an isolated WordPress installation, with theme-relative scripts, logos and media and ordinary root shopping URLs. Direct WordPress gateway HTTP checks pass for guest account isolation, protected orders, CSRF/origin rejection, private token stripping, cart persistence across requests, quantity changes, invalid coupon rejection and cart cleanup. The adapter now defers ordinary frontend cart initialization so Store API restores its token-backed session.
+- Theme route checks cover known pages, private route flags, traversal boundaries, unknown routes, original product-ID redirects and the WordPress sitemap redirect. HTTP checks verify customer no-cache/noindex responses and unknown-route 404s. WordPress canonical guessing is disabled for the coded theme; generated canonical tags remain authoritative.
+- The WordPress build packages 183 pre-rendered routes, public assets and the direct PHP adapter under `wp-content/themes/saalankruta`. Node runs only during development/CI. No backend subdomain or database migration is required. The browser-served PHP preview loads the original header logo; document width matches the actual 474px content viewport.
 - TypeScript and Vite production/SSR builds pass. The build pre-renders 183 routes with canonical URLs, sitemap and product structured data.
 - Ten catalogue/unit checks pass: 143 published identities, INR, legacy category mappings, descendants, combined search/filter/sort, quantity bounds, variation matching and unavailable prices. Legacy ordering fixtures preserve the original inventory mapping; the current homepage/menu presentation is reorganised at the owner's request.
 - The signed bridge integration suite passes against isolated WordPress and WooCommerce 8.8.7 on MariaDB and PHP 8.3. It checks unsigned requests, guest/account access, invalid login, wishlist deduplication, India address validation, cart changes, invalid coupons/products, test checkout, duplicate submission, order ownership and verified guest tracking.
@@ -24,7 +27,7 @@ Latest visual revision verified locally on 5 October 2026, with backend/catalogu
 - Development test orders and accounts are isolated; no production orders, stock, uploads or database were modified.
 - A real payment provider is not connected. Production order submission is disabled. Success/failure/cancellation/callback and transaction/email tests remain required for the selected gateway.
 - Shipping fees, free-shipping threshold, return policy and verified WhatsApp details remain business inputs.
-- The backend subdomain, Hostinger deployment mapping, backups, SSL, production mail delivery and existing account migration must be verified before launch.
+- The new theme/plugin have not been installed or activated on production. Verify the Hostinger theme-folder mapping, a restorable current backup, TLS, production mail delivery and existing customer login behaviour before launch. The existing WooCommerce database and uploads stay in place; accounts do not need migration.
 - Mobile Safari, real Android devices, assistive technology and measured Core Web Vitals remain launch checks. The lazy ShaderGradient/Three.js chunk is approximately 293KB gzip; no performance score is promised.
 - Reduced-motion, reduced-transparency and WebGL-failure paths are implemented, but these preferences/failure modes have not yet been exercised across real devices.
 - The interaction driver uses the installed ShaderGradient mesh and uniform contract. Dependency upgrades require a regression check for fluid input, pause and rendering.

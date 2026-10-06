@@ -1,3 +1,4 @@
+import { asset } from "./assets";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -383,7 +384,7 @@ export default function Header() {
           </nav>
           <Link className="boutique-logo" to="/" aria-label="Saalankruta home">
             <img
-              src="/logo.png"
+              src={asset("/logo.png")}
               width="192"
               height="64"
               alt="Saalankruta. Every woman's dream"
@@ -540,7 +541,12 @@ export default function Header() {
         >
           <div className="boutique-overlay-top">
             <Link to="/" aria-label="Saalankruta home">
-              <img src="/logo.png" width="170" height="56" alt="Saalankruta" />
+              <img
+                src={asset("/logo.png")}
+                width="170"
+                height="56"
+                alt="Saalankruta"
+              />
             </Link>
             <button
               className="boutique-icon"
