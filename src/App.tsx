@@ -1,17 +1,16 @@
+import Home from "./BoutiqueHome";
+import Footer from "./BoutiqueFooter";
+import ProductCard from "./ProductCard";
 import { asset } from "./assets";
-import CollectionMotion from "./CollectionMotion";
 import KineticText from "./KineticText";
-import NecklaceStory from "./NecklaceStory";
 import ProductFilters from "./ProductFilters";
 import Modal from "./Modal";
-import BrandSignature from "./BrandSignature";
 import Header from "./Header";
 import RoyalAtmosphere from "./RoyalAtmosphere";
 import ResetPassword from "./ResetPassword";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Link,
-  NavLink,
   Route,
   Routes,
   useLocation,
@@ -23,15 +22,11 @@ import {
   ArrowRight,
   ArrowUpRight,
   Heart,
-  Menu,
-  Search,
   ShoppingBag,
-  UserRound,
   X,
   Minus,
   Plus,
   Check,
-  ChevronDown,
   SlidersHorizontal,
   Truck,
   ShieldCheck,
@@ -42,7 +37,12 @@ import {
   Play,
 } from "lucide-react";
 import { useStore } from "./store";
-import { api } from "./api";
+import { api, ApiError } from "./api";
+import {
+  canAdjustCartQuantity,
+  fillUntouchedAddress,
+  priceRangeError,
+} from "./commerce-state";
 import {
   menu,
   price,
@@ -51,9 +51,8 @@ import {
   clampQuantity,
   text,
   filterProducts,
-  inCategory,
 } from "./catalogue";
-import type { Product, Address, Order, Cart, Customer } from "./types";
+import type { Product, Address, Order, Cart } from "./types";
 const categoryPath = (slug: string) => `/product-category/${slug}/`;
 function useTitle(title: string) {
   useEffect(() => {
@@ -106,324 +105,6 @@ const policyLinks = [
   { name: "Cancellation and Refund", slug: "cancellation-and-refund" },
   { name: "Shipping and Delivery", slug: "shipping-and-delivery" },
 ];
-function Footer() {
-  return (
-    <footer className="atelier-footer">
-      <div className="footer-masthead" aria-hidden="true">
-        Saalankruta<span>Every woman’s dream.</span>
-      </div>
-      <div className="footer-top">
-        <div className="footer-brand">
-          <BrandSignature />
-          <p>
-            Tradition, with a personal touch.
-            <br />
-            Jewellery for the moments that are yours.
-          </p>
-          <Link to="/about/">
-            Our story <ArrowUpRight size={16} />
-          </Link>
-        </div>
-        <div>
-          <h3>Discover</h3>
-          {menu.slice(0, 4).map((m) => (
-            <Link to={categoryPath(m.slug)} key={m.slug}>
-              {m.name}
-            </Link>
-          ))}
-          <Link to="/shop/">All jewellery & gifts</Link>
-        </div>
-        <div>
-          <h3>Here to help</h3>
-          <Link to="/contact/">Contact us</Link>
-          <Link to="/track-order/">Track your order</Link>
-          <Link to="/account/">Your account</Link>
-          <Link to="/wishlist/">Your wishlist</Link>
-          {policyLinks.slice(2).map((p) => (
-            <Link key={p.slug} to={`/${p.slug}/`}>
-              {p.name}
-            </Link>
-          ))}
-        </div>
-        <div>
-          <h3>Visit & connect</h3>
-          <p>
-            No.3, Pushpahasa, 3rd Cross,
-            <br />
-            Sumukha Layout, Chikkalsandra,
-            <br />
-            Bengaluru - 560061
-          </p>
-          <a href="mailto:saalankruta@gmail.com">saalankruta@gmail.com</a>
-          <Link to="/contact/">
-            Speak with the boutique <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </div>
-      <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} Saalankruta</span>
-        <div>
-          <Link to="/privacy-policy/">Privacy</Link>
-          <Link to="/terms-and-conditions/">Terms</Link>
-          <span>India · INR ₹</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-function ProductCard({ product: p }: { product: Product }) {
-  const { wishlist, toggleWish } = useStore();
-  return (
-    <article className="product-card">
-      <div className="product-photo">
-        <Link to={`/product/${p.slug}/`}>
-          <img
-            src={
-              p.images[0]?.thumbnail ||
-              p.images[0]?.src ||
-              asset("/product-placeholder.svg")
-            }
-            alt={p.images[0]?.alt || text(p.name)}
-            loading="lazy"
-          />
-        </Link>
-        <button
-          className={`wish-button ${wishlist.includes(p.id) ? "selected" : ""}`}
-          aria-label={`${wishlist.includes(p.id) ? "Remove" : "Add"} ${text(p.name)} ${wishlist.includes(p.id) ? "from" : "to"} wishlist`}
-          aria-pressed={wishlist.includes(p.id)}
-          onClick={() => void toggleWish(p.id)}
-        >
-          <Heart size={18} />
-        </button>
-        {p.on_sale && <span className="photo-label">Special price</span>}
-        {!p.is_in_stock && <span className="photo-label">Sold out</span>}
-      </div>
-      <div className="product-caption">
-        <span>{text(p.categories[0]?.name || "Jewellery")}</span>
-        <Link to={`/product/${p.slug}/`}>
-          <h3>{text(p.name)}</h3>
-        </Link>
-        <div>
-          {productPrice(p)}{" "}
-          {p.on_sale && (
-            <del>
-              {price(p.prices.regular_price, p.prices.currency_minor_unit)}
-            </del>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
-function Home({
-  motionPaused,
-  setMotionPaused,
-}: {
-  motionPaused: boolean;
-  setMotionPaused: (paused: boolean) => void;
-}) {
-  useTitle("Every woman's dream");
-  const { products, categories, loading } = useStore();
-  const hero = products.find((p) => p.slug === "cz-necklace-4") || products[0];
-  const bridal = products.find((p) => inCategory(p, "bridal-set", categories));
-  const collectionTiles = [
-    {
-      slug: "necklace",
-      name: "Necklaces",
-      note: "The finishing touch",
-      product: hero,
-    },
-    {
-      slug: "bangles",
-      name: "Bangles",
-      note: "A little everyday ritual",
-      product: products.find((p) => p.slug === "cz-green-bangle"),
-    },
-    {
-      slug: "earrings",
-      name: "Earrings",
-      note: "Details that speak",
-      product:
-        products.find((p) => p.slug === "plate-changeable-stud") ||
-        products.find((p) => inCategory(p, "earrings", categories)),
-    },
-    {
-      slug: "bridal-set",
-      name: "Bridal & sets",
-      note: "For your big moments",
-      product: bridal,
-    },
-  ];
-  const selections = [
-    { slug: "necklace", title: "Around you.", note: "THE NECKLACE EDIT" },
-    { slug: "bangles", title: "In the details.", note: "THE BANGLE EDIT" },
-    {
-      slug: "gift-items",
-      title: "A thoughtful gesture.",
-      note: "JEWELLERY & GIFTS",
-    },
-  ];
-  return (
-    <div className="atelier-home">
-      <CollectionMotion />
-      <NecklaceStory paused={motionPaused} onPauseChange={setMotionPaused} />
-      <section className="atelier-manifesto">
-        <div className="wrap">
-          <div className="atelier-section-label">
-            <span>FROM OUR BOUTIQUE</span>
-            <span>BENGALURU, INDIA</span>
-          </div>
-          <h2>
-            <KineticText text="An expression entirely yours." />
-          </h2>
-          <div className="manifesto-bottom">
-            <p>
-              Traditional jewellery, contemporary choices. Explore necklaces,
-              bangles and occasion pieces from our Bengaluru boutique.
-            </p>
-            <Link className="text-link" to="/about/">
-              Meet Saalankruta <ArrowUpRight size={20} />
-            </Link>
-          </div>
-        </div>
-      </section>
-      <section
-        className="collection-index wrap"
-        aria-labelledby="collection-index-title"
-      >
-        <div className="section-heading">
-          <div>
-            <h2 id="collection-index-title">
-              <KineticText text="The collections." />
-            </h2>
-          </div>
-          <Link className="text-link" to="/shop/">
-            Explore every piece <ArrowUpRight size={20} />
-          </Link>
-        </div>
-        <div className="collection-canvas">
-          {collectionTiles.map((item, i) => (
-            <Link
-              className={`collection-tile tile-${i + 1}`}
-              to={categoryPath(item.slug)}
-              key={item.slug}
-            >
-              <div className="collection-tile-image">
-                {item.product?.images[0] && (
-                  <img
-                    src={item.product.images[0].src}
-                    alt={text(item.product.name)}
-                    loading="lazy"
-                  />
-                )}
-              </div>
-              <div className="collection-tile-caption">
-                <span>
-                  <small>{item.note}</small>
-                  <strong>{item.name}</strong>
-                </span>
-                <ArrowUpRight size={24} />
-              </div>
-            </Link>
-          ))}
-        </div>
-        <div className="collection-index-links">
-          <span>Also discover</span>
-          {[
-            "hara",
-            "finger-rings",
-            "matti",
-            "nose-pin",
-            "hair-accessories",
-            "gift-items",
-          ].map((slug) => (
-            <Link key={slug} to={categoryPath(slug)}>
-              {text(categories.find((c) => c.slug === slug)?.name || slug)}
-            </Link>
-          ))}
-        </div>
-      </section>
-      {loading && <p className="wrap">Finding your favourites…</p>}
-      {selections.map(({ slug, title, note }, index) => {
-        const selected = filterProducts(products, categories, { slug });
-        const list =
-          index === 0 && hero
-            ? [hero, ...selected.filter((p) => p.id !== hero.id)].slice(0, 4)
-            : selected.slice(0, 4);
-        if (!list.length) return null;
-        return (
-          <section
-            className={`collection-section atelier-edit edit-${index} wrap`}
-            key={slug}
-            id={slug === "necklace" ? "necklace-collection" : undefined}
-          >
-            <div className="section-heading">
-              <div>
-                <h2>
-                  <KineticText text={title} />
-                </h2>
-              </div>
-              <Link className="text-link" to={categoryPath(slug)}>
-                Shop{" "}
-                {text(categories.find((c) => c.slug === slug)?.name || slug)}{" "}
-                <ArrowUpRight size={18} />
-              </Link>
-            </div>
-            <div
-              className={`product-grid ${index === 0 ? "product-edit" : ""}`}
-            >
-              {list.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-            {index === 1 && (
-              <div className="atelier-occasion">
-                <div>
-                  <h2>
-                    <KineticText text="Some days deserve everything." />
-                  </h2>
-                  <p>
-                    Bridal sets and traditional jewellery for the moments you
-                    make your own.
-                  </p>
-                  <Link className="primary" to={categoryPath("bridal-set")}>
-                    Explore bridal sets <ArrowRight size={18} />
-                  </Link>
-                </div>
-                {bridal?.images[0] && (
-                  <img
-                    src={bridal.images[0].src}
-                    alt={text(bridal.name)}
-                    loading="lazy"
-                  />
-                )}
-              </div>
-            )}
-          </section>
-        );
-      })}
-      <section className="atelier-visit">
-        <div className="wrap">
-          <h2>
-            <KineticText text="Bengaluru." />
-          </h2>
-          <div className="visit-bottom">
-            <p>
-              No.3, Pushpahasa, 3rd Cross,
-              <br />
-              Sumukha Layout, Chikkalsandra,
-              <br />
-              Bengaluru – 560061
-            </p>
-            <Link className="text-link" to="/contact/">
-              Visit the boutique <ArrowUpRight size={24} />
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
 function Collection() {
   const navigate = useNavigate();
   const { slug } = useParams();
@@ -431,6 +112,22 @@ function Collection() {
   const { products, categories, loading, catalogueError } = useStore();
   const [filters, setFilters] = useState(false);
   const active = categories.find((c) => c.slug === slug);
+  const filterError = priceRangeError(
+    params.get("min") || "",
+    params.get("max") || "",
+  );
+  const activeFilters = [
+    { key: "q", label: params.get("q") ? `Search: ${params.get("q")}` : "" },
+    {
+      key: "min",
+      label: params.get("min") ? `From ₹${params.get("min")}` : "",
+    },
+    {
+      key: "max",
+      label: params.get("max") ? `Up to ₹${params.get("max")}` : "",
+    },
+    { key: "stock", label: params.get("stock") === "yes" ? "In stock" : "" },
+  ].filter((filter) => filter.label);
   const title = active
     ? text(active.name)
     : params.get("q")
@@ -446,7 +143,7 @@ function Collection() {
     sort: params.get("sort") || "",
   });
   const page = Math.min(
-    Math.max(1, Number(params.get("page")) || 1),
+    Math.max(1, Math.floor(Number(params.get("page"))) || 1),
     Math.max(1, Math.ceil(result.length / 16)),
   );
   const pages = Math.ceil(result.length / 16);
@@ -457,6 +154,7 @@ function Collection() {
     setParams(next);
   };
   const related = menu.find((m) => m.slug === slug)?.children || [];
+  if (!loading && slug && !active && categories.length > 0) return <NotFound />;
   return (
     <div className="wrap page">
       <div className="breadcrumbs">
@@ -489,7 +187,9 @@ function Collection() {
         >
           <SlidersHorizontal size={17} /> Filters
         </button>
-        <span>{result.length} pieces</span>
+        <span role="status" aria-live="polite">
+          {loading ? "Loading…" : `${result.length} pieces`}
+        </span>
         <label>
           Sort{" "}
           <select
@@ -502,6 +202,35 @@ function Collection() {
           </select>
         </label>
       </div>
+      {activeFilters.length > 0 && (
+        <div className="active-filters" aria-label="Active filters">
+          {activeFilters.map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => update(filter.key, "")}
+              aria-label={`Remove ${filter.label} filter`}
+            >
+              {filter.label}
+              <X size={14} aria-hidden="true" />
+            </button>
+          ))}
+          <button
+            className="clear-filters"
+            onClick={() => {
+              const next = new URLSearchParams(params);
+              ["q", "min", "max", "stock", "page"].forEach((key) =>
+                next.delete(key),
+              );
+              setParams(next);
+            }}
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+      {filterError && (
+        <ErrorBox message={filterError} retry={() => setFilters(true)} />
+      )}
       {filters && (
         <ProductFilters
           categories={categories}
@@ -522,7 +251,9 @@ function Collection() {
       )}
       {catalogueError && <p className="service-note">{catalogueError}</p>}
       {loading ? (
-        <p>Loading the collection…</p>
+        <p className="catalogue-loading" role="status">
+          Loading the collection…
+        </p>
       ) : result.length === 0 ? (
         <Empty
           title="No pieces found"
@@ -542,6 +273,7 @@ function Collection() {
           {Array.from({ length: pages }, (_, i) => (
             <button
               aria-current={page === i + 1 ? "page" : undefined}
+              aria-label={`Page ${i + 1}`}
               className={page === i + 1 ? "active" : ""}
               onClick={() => {
                 const next = new URLSearchParams(params);
@@ -561,18 +293,17 @@ function Collection() {
 }
 function ProductPage() {
   const { slug } = useParams();
-  const {
-    products,
-    categories,
-    loading,
-    wishlist,
-    toggleWish,
-    cartAction,
-    busy,
-  } = useStore();
+  const { products, loading, wishlist, toggleWish, cartAction, busy } =
+    useStore();
   const snapshot = products.find((p) => p.slug === slug);
   const [detail, setDetail] = useState<Product | null>(null),
     [variationDetail, setVariationDetail] = useState<Product | null>(null);
+  const [detailError, setDetailError] = useState(""),
+    [variationError, setVariationError] = useState("");
+  const [detailMissing, setDetailMissing] = useState(false),
+    [detailLoading, setDetailLoading] = useState(true);
+  const [detailRetry, setDetailRetry] = useState(0),
+    [variationRetry, setVariationRetry] = useState(0);
   const p =
     detail && detail.slug === slug
       ? {
@@ -583,16 +314,30 @@ function ProductPage() {
   useEffect(() => {
     let alive = true;
     setDetail(null);
+    setDetailError("");
+    setDetailMissing(false);
+    setDetailLoading(true);
     if (snapshot?.id)
       api<Product>("product", { id: snapshot.id })
         .then((v) => {
           if (alive) setDetail(v);
         })
-        .catch(() => {});
+        .catch((error) => {
+          if (!alive) return;
+          setDetailMissing(error instanceof ApiError && error.status === 404);
+          setDetailError(
+            error instanceof Error
+              ? error.message
+              : "This piece could not be refreshed.",
+          );
+        })
+        .finally(() => {
+          if (alive) setDetailLoading(false);
+        });
     return () => {
       alive = false;
     };
-  }, [slug, snapshot?.id]);
+  }, [slug, snapshot?.id, detailRetry]);
   const [image, setImage] = useState(0),
     [quantity, setQuantity] = useState(1),
     [zoom, setZoom] = useState(false),
@@ -606,16 +351,25 @@ function ProductPage() {
   useEffect(() => {
     let alive = true;
     setVariationDetail(null);
+    setVariationError("");
+    setImage(0);
     if (variant?.id)
       api<Product>("product", { id: variant.id })
         .then((v) => {
           if (alive) setVariationDetail(v);
         })
-        .catch(() => {});
+        .catch((error) => {
+          if (alive)
+            setVariationError(
+              error instanceof Error
+                ? error.message
+                : "This option could not be checked.",
+            );
+        });
     return () => {
       alive = false;
     };
-  }, [variant?.id]);
+  }, [variant?.id, variationRetry]);
   const chosen =
     variant && variationDetail?.id === variant.id ? variationDetail : null;
   const purchase = chosen || p;
@@ -626,21 +380,45 @@ function ProductPage() {
   useTitle(p ? text(p.name) : "Jewellery");
   if (loading) return <p className="wrap page">Loading your piece…</p>;
   if (!p || !purchase) return <NotFound />;
+  if (detailMissing)
+    return (
+      <div className="wrap page">
+        <Empty
+          title="This piece is no longer available"
+          message="Explore the collection to find another piece you love."
+          to="/shop/"
+          action="Explore the collection"
+        />
+      </div>
+    );
+  const galleryImages = chosen?.images.length ? chosen.images : p.images;
+  const allOptionsSelected = p.attributes
+    .filter((attribute) => attribute.has_variations)
+    .every((attribute) => !!selection[attribute.name]);
   const canBuy =
+    !detailLoading &&
+    !detailError &&
+    !variationError &&
     purchase.is_in_stock &&
     purchase.is_purchasable &&
     (!p.has_options || !!chosen);
   const purchaseLabel = busy
     ? "Adding…"
-    : p.has_options && !variant
-      ? "Select your options"
-      : p.has_options && !chosen
-        ? "Checking option…"
-        : !purchase.is_in_stock
-          ? "Sold out"
-          : !purchase.is_purchasable
-            ? "Unavailable"
-            : "Add to bag";
+    : detailLoading
+      ? "Checking availability…"
+      : detailError || variationError
+        ? "Unable to check availability"
+        : p.has_options && allOptionsSelected && !variant
+          ? "Combination unavailable"
+          : p.has_options && !variant
+            ? "Select your options"
+            : p.has_options && !chosen
+              ? "Checking option…"
+              : !purchase.is_in_stock
+                ? "Sold out"
+                : !purchase.is_purchasable
+                  ? "Unavailable"
+                  : "Add to bag";
   const related = products
     .filter(
       (other) =>
@@ -667,16 +445,20 @@ function ProductPage() {
             aria-label="Enlarge product image"
           >
             <img
-              src={p.images[image]?.src || asset("/product-placeholder.svg")}
-              alt={p.images[image]?.alt || text(p.name)}
+              src={
+                galleryImages[image]?.src || asset("/product-placeholder.svg")
+              }
+              srcSet={galleryImages[image]?.srcset}
+              sizes="(max-width: 767px) 92vw, (max-width: 1760px) 46vw, 800px"
+              alt={galleryImages[image]?.alt || text(p.name)}
             />
             <span>
               View closer <Plus size={15} />
             </span>
           </button>
-          {p.images.length > 1 && (
+          {galleryImages.length > 1 && (
             <div className="thumbnails">
-              {p.images.map((i, n) => (
+              {galleryImages.map((i, n) => (
                 <button
                   key={i.id}
                   onClick={() => setImage(n)}
@@ -710,13 +492,36 @@ function ProductPage() {
               "Explore the piece in the gallery. Contact the boutique for fit, materials and care details."}
           </p>
           <span className="stock">
-            <span className={p.is_in_stock ? "stock-dot" : "stock-dot sold"} />
-            {purchase.is_in_stock
-              ? purchase.is_purchasable
-                ? "Available"
-                : "Currently unavailable"
-              : "Currently sold out"}
+            <span
+              className={purchase.is_in_stock ? "stock-dot" : "stock-dot sold"}
+            />
+            {detailLoading
+              ? "Checking availability…"
+              : detailError
+                ? "Availability could not be checked"
+                : purchase.is_in_stock
+                  ? purchase.is_purchasable
+                    ? "Available"
+                    : "Currently unavailable"
+                  : "Currently sold out"}
           </span>
+          {detailError && (
+            <ErrorBox
+              message={detailError}
+              retry={() => setDetailRetry((value) => value + 1)}
+            />
+          )}
+          {variationError && (
+            <ErrorBox
+              message={variationError}
+              retry={() => setVariationRetry((value) => value + 1)}
+            />
+          )}
+          {p.has_options && allOptionsSelected && !variant && (
+            <p className="service-note" role="status">
+              This combination is unavailable. Please choose another option.
+            </p>
+          )}
           {p.attributes
             ?.filter((a) => a.has_variations)
             .map((a) => (
@@ -741,6 +546,7 @@ function ProductPage() {
             <div className="quantity">
               <button
                 aria-label="Decrease quantity"
+                disabled={quantity <= (limits?.minimum || 1)}
                 onClick={() =>
                   setQuantity(
                     clampQuantity(
@@ -771,6 +577,11 @@ function ProductPage() {
               />
               <button
                 aria-label="Increase quantity"
+                disabled={
+                  !!limits?.maximum &&
+                  limits.maximum > 0 &&
+                  quantity >= limits.maximum
+                }
                 onClick={() =>
                   setQuantity(
                     clampQuantity(
@@ -804,7 +615,11 @@ function ProductPage() {
             </button>
             <button
               className={`icon-button ${wishlist.includes(p.id) ? "selected" : ""}`}
-              aria-label="Save to wishlist"
+              aria-label={
+                wishlist.includes(p.id)
+                  ? "Remove from wishlist"
+                  : "Save to wishlist"
+              }
               aria-pressed={wishlist.includes(p.id)}
               onClick={() => void toggleWish(p.id)}
             >
@@ -863,7 +678,7 @@ function ProductPage() {
             <X />
           </button>
           <img
-            src={p.images[image]?.src || asset("/product-placeholder.svg")}
+            src={galleryImages[image]?.src || asset("/product-placeholder.svg")}
             alt={text(p.name)}
           />
         </Modal>
@@ -928,25 +743,38 @@ function Empty({
   );
 }
 function Wishlist() {
-  const { wishlist, products } = useStore();
+  const { wishlist, products, loading, customerLoading } = useStore();
+  const savedProducts = products.filter((product) =>
+    wishlist.includes(product.id),
+  );
   useTitle("Your wishlist");
   return (
     <div className="wrap page">
       <div className="collection-intro commerce-intro">
         <h1>Your wishlist</h1>
       </div>
-      {wishlist.length ? (
+      {loading || customerLoading ? (
+        <p className="catalogue-loading" role="status">
+          Opening your saved pieces…
+        </p>
+      ) : savedProducts.length ? (
         <div className="product-grid">
-          {products
-            .filter((p) => wishlist.includes(p.id))
-            .map((p) => (
-              <ProductCard product={p} key={p.id} />
-            ))}
+          {savedProducts.map((p) => (
+            <ProductCard product={p} key={p.id} />
+          ))}
         </div>
       ) : (
         <Empty
-          title="Your favourites belong here"
-          message="Save the pieces you love with the heart beside each product."
+          title={
+            wishlist.length
+              ? "Your saved pieces are unavailable"
+              : "Your favourites belong here"
+          }
+          message={
+            wishlist.length
+              ? "Those pieces are no longer in the current collection. Discover something new to save."
+              : "Save the pieces you love with the heart beside each product."
+          }
           to="/shop/"
           action="Find your favourites"
         />
@@ -997,6 +825,17 @@ function CartPage() {
   useEffect(() => {
     refreshCart().catch((e) => setError(e.message));
   }, []);
+  const cartProductPath = (item: Cart["items"][number]) => {
+    const match = products.find((product) => product.id === item.id);
+    if (match) return `/product/${match.slug}/`;
+    try {
+      const path = new URL(item.permalink || "", "https://saalankruta.com")
+        .pathname;
+      return path.startsWith("/product/") ? path : "/shop/";
+    } catch {
+      return "/shop/";
+    }
+  };
   return (
     <div className="wrap page">
       <div className="collection-intro commerce-intro">
@@ -1025,30 +864,50 @@ function CartPage() {
           <div>
             {cart.items.map((item) => (
               <article className="cart-item" key={item.key}>
-                <img
-                  src={
-                    item.images[0]?.thumbnail ||
-                    item.images[0]?.src ||
-                    products.find((p) => p.id === item.id)?.images[0]?.src ||
-                    asset("/product-placeholder.svg")
-                  }
-                  alt={text(item.name)}
-                />
+                <Link
+                  className="cart-product-link"
+                  to={cartProductPath(item)}
+                  aria-label={`View ${text(item.name)}`}
+                >
+                  <img
+                    src={
+                      item.images[0]?.thumbnail ||
+                      item.images[0]?.src ||
+                      products.find((p) => p.id === item.id)?.images[0]?.src ||
+                      asset("/product-placeholder.svg")
+                    }
+                    alt={text(item.name)}
+                  />
+                </Link>
                 <div>
-                  <h3>{text(item.name)}</h3>
+                  <h3>
+                    <Link to={cartProductPath(item)}>{text(item.name)}</Link>
+                  </h3>
+                  {!!item.variation?.length && (
+                    <dl className="cart-variation">
+                      {item.variation.map((option) => (
+                        <div key={option.attribute}>
+                          <dt>{text(option.attribute)}</dt>
+                          <dd>{text(option.value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                   <p>
                     {price(item.prices.price, item.prices.currency_minor_unit)}
                   </p>
                   <div className="quantity">
                     <button
-                      disabled={
-                        busy || item.quantity <= item.quantity_limits.minimum
-                      }
+                      disabled={busy || !canAdjustCartQuantity(item, -1)}
                       aria-label={`Decrease ${text(item.name)} quantity`}
                       onClick={() =>
                         void cartAction("update-item", {
                           key: item.key,
-                          quantity: item.quantity - 1,
+                          quantity: Math.max(
+                            item.quantity_limits.minimum,
+                            item.quantity -
+                              (item.quantity_limits.multiple_of || 1),
+                          ),
                         })
                       }
                     >
@@ -1056,14 +915,14 @@ function CartPage() {
                     </button>
                     <span>{item.quantity}</span>
                     <button
-                      disabled={
-                        busy || item.quantity >= item.quantity_limits.maximum
-                      }
+                      disabled={busy || !canAdjustCartQuantity(item, 1)}
                       aria-label={`Increase ${text(item.name)} quantity`}
                       onClick={() =>
                         void cartAction("update-item", {
                           key: item.key,
-                          quantity: item.quantity + 1,
+                          quantity:
+                            item.quantity +
+                            (item.quantity_limits.multiple_of || 1),
                         })
                       }
                     >
@@ -1117,6 +976,8 @@ function CartPage() {
             {cart.coupons.map((c) => (
               <button
                 className="text-link"
+                disabled={busy}
+                aria-label={`Remove promo code ${c.code}`}
                 onClick={() =>
                   void cartAction("remove-coupon", { code: c.code })
                 }
@@ -1193,10 +1054,12 @@ function AddressFields({
   address,
   setAddress,
   email = true,
+  section = "billing",
 }: {
   address: Address;
   setAddress: (a: Address) => void;
   email?: boolean;
+  section?: "billing" | "shipping";
 }) {
   return (
     <div className="form-grid">
@@ -1229,13 +1092,9 @@ function AddressFields({
             type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
             inputMode={key === "postcode" ? "numeric" : undefined}
             pattern={key === "postcode" ? "[1-9][0-9]{5}" : undefined}
-            autoComplete={
-              key === "postcode"
-                ? "postal-code"
-                : key === "email"
-                  ? "email"
-                  : undefined
-            }
+            autoComplete={`section-${section} ${section} ${{ first_name: "given-name", last_name: "family-name", email: "email", phone: "tel", address_1: "address-line1", address_2: "address-line2", city: "address-level2", postcode: "postal-code" }[key as string] || "off"}`}
+            name={`${section}_${key}`}
+            maxLength={key === "postcode" ? 6 : undefined}
             value={address[key] || ""}
             onChange={(e) => setAddress({ ...address, [key]: e.target.value })}
           />
@@ -1245,6 +1104,8 @@ function AddressFields({
         State / Union territory
         <select
           value={address.state}
+          autoComplete={`section-${section} ${section} address-level1`}
+          name={`${section}_state`}
           onChange={(e) => setAddress({ ...address, state: e.target.value })}
           required
         >
@@ -1258,14 +1119,25 @@ function AddressFields({
       </label>
       <label>
         Country
-        <input value="India" readOnly />
+        <input
+          value="India"
+          readOnly
+          autoComplete={`section-${section} ${section} country-name`}
+        />
       </label>
     </div>
   );
 }
 function Checkout() {
-  const { products, cart, refreshCart, customer, cartAction, busy } =
-    useStore();
+  const {
+    products,
+    cart,
+    refreshCart,
+    customer,
+    customerLoading,
+    cartAction,
+    busy,
+  } = useStore();
   const [address, setAddress] = useState<Address>(
       customer?.billing
         ? { ...blankAddress, ...customer.billing, country: "IN" }
@@ -1283,15 +1155,65 @@ function Checkout() {
     [method, setMethod] = useState(""),
     [createAccount, setCreateAccount] = useState(false),
     [note, setNote] = useState("");
+  const [paymentLoading, setPaymentLoading] = useState(true),
+    [paymentError, setPaymentError] = useState(""),
+    [paymentRetry, setPaymentRetry] = useState(0);
+  const touchedBilling = useRef(new Set<keyof Address>()),
+    touchedShipping = useRef(new Set<keyof Address>());
+  const updateBilling = (next: Address) => {
+    for (const field of Object.keys(next) as (keyof Address)[])
+      if (next[field] !== address[field]) touchedBilling.current.add(field);
+    setAddress(next);
+  };
+  const updateShipping = (next: Address) => {
+    for (const field of Object.keys(next) as (keyof Address)[])
+      if (next[field] !== shipping[field]) touchedShipping.current.add(field);
+    setShipping(next);
+  };
   const key = useRef(crypto.randomUUID());
+  const checkoutStepRef = useRef<HTMLElement>(null),
+    previousCheckoutStep = useRef(step);
   const navigate = useNavigate();
   useTitle("Checkout");
   useEffect(() => {
+    if (step !== previousCheckoutStep.current) checkoutStepRef.current?.focus();
+    previousCheckoutStep.current = step;
+  }, [step]);
+  useEffect(() => {
+    if (!customer) return;
+    setAddress((current) =>
+      fillUntouchedAddress(current, customer.billing, touchedBilling.current),
+    );
+    setShipping((current) =>
+      fillUntouchedAddress(current, customer.shipping, touchedShipping.current),
+    );
+  }, [customer]);
+  useEffect(() => {
     refreshCart().catch((e) => setError(e.message));
-    api<typeof methods>("payment-config")
-      .then(setMethods)
-      .catch(() => {});
   }, []);
+  useEffect(() => {
+    let alive = true;
+    setPaymentLoading(true);
+    setPaymentError("");
+    api<typeof methods>("payment-config")
+      .then((value) => {
+        if (alive) setMethods(value);
+      })
+      .catch((error) => {
+        if (alive)
+          setPaymentError(
+            error instanceof Error
+              ? error.message
+              : "Payment availability could not be checked.",
+          );
+      })
+      .finally(() => {
+        if (alive) setPaymentLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [paymentRetry]);
   const delivery = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1349,11 +1271,33 @@ function Checkout() {
         <h1>Checkout</h1>
       </div>
       {error && <ErrorBox message={error} />}
+      {paymentError && (
+        <ErrorBox
+          message={paymentError}
+          retry={() => setPaymentRetry((value) => value + 1)}
+        />
+      )}
+      {!paymentLoading && !paymentError && !methods.enabled && (
+        <div className="checkout-availability" role="status">
+          <ShoppingBag size={20} aria-hidden="true" />
+          <div>
+            <strong>Online ordering opens soon</strong>
+            <p>
+              You can explore the collection and save pieces in your bag.
+              Payment setup is in progress, so orders cannot be placed yet.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="checkout-steps">
         <span className={step === 1 ? "active" : ""}>Your details</span>
         <span className={step === 2 ? "active" : ""}>Delivery & payment</span>
       </div>
-      {cart && cart.items.length === 0 ? (
+      {!cart ? (
+        <p className="catalogue-loading" role="status">
+          Preparing your bag…
+        </p>
+      ) : cart.items.length === 0 ? (
         <Empty
           title="Your bag is empty"
           message="Choose a piece before continuing."
@@ -1362,16 +1306,28 @@ function Checkout() {
         />
       ) : (
         <div className="shopping-layout">
-          <section>
+          <section
+            ref={checkoutStepRef}
+            tabIndex={-1}
+            aria-label={
+              step === 1 ? "Your delivery details" : "Delivery and payment"
+            }
+          >
             {step === 1 ? (
               <form onSubmit={delivery}>
                 <h2>Delivery details</h2>
                 {!customer && (
                   <p>
-                    Checkout as a guest, or <Link to="/account/">sign in</Link>.
+                    Checkout as a guest, or{" "}
+                    <Link to="/account/?return=/checkout/">sign in</Link>.
                   </p>
                 )}
-                <AddressFields address={address} setAddress={setAddress} />
+                {customerLoading && (
+                  <p className="small" role="status">
+                    Checking your saved details…
+                  </p>
+                )}
+                <AddressFields address={address} setAddress={updateBilling} />
                 <label className="check">
                   <input
                     type="checkbox"
@@ -1383,8 +1339,9 @@ function Checkout() {
                 {separate && (
                   <AddressFields
                     address={shipping}
-                    setAddress={setShipping}
+                    setAddress={updateShipping}
                     email={false}
+                    section="shipping"
                   />
                 )}
                 <label>
@@ -1429,11 +1386,28 @@ function Checkout() {
                   <ArrowLeft size={16} /> Edit details
                 </button>
                 <h2>Delivery</h2>
+                <div className="checkout-address-summary">
+                  <p>
+                    <strong>
+                      {(separate ? shipping : address).first_name}{" "}
+                      {(separate ? shipping : address).last_name}
+                    </strong>
+                  </p>
+                  <p>
+                    {(separate ? shipping : address).address_1},{" "}
+                    {(separate ? shipping : address).city}
+                  </p>
+                  <p>
+                    {states[(separate ? shipping : address).state]}{" "}
+                    {(separate ? shipping : address).postcode}, India
+                  </p>
+                </div>
                 {cart?.shipping_rates.flatMap((pack) =>
                   pack.shipping_rates.map((rate) => (
                     <label className="radio-row" key={rate.rate_id}>
                       <input
                         type="radio"
+                        disabled={busy || submitting}
                         name={`shipping-${pack.package_id}`}
                         checked={rate.selected}
                         onChange={() =>
@@ -1490,14 +1464,17 @@ function Checkout() {
                   className="primary block"
                   disabled={
                     !methods.enabled ||
+                    paymentLoading ||
+                    !!paymentError ||
                     !method ||
                     busy ||
                     submitting ||
                     !!(
                       cart?.needs_shipping &&
-                      !cart.shipping_rates.some((p) =>
-                        p.shipping_rates.some((r) => r.selected),
-                      )
+                      (!cart.shipping_rates.length ||
+                        !cart.shipping_rates.every((p) =>
+                          p.shipping_rates.some((r) => r.selected),
+                        ))
                     )
                   }
                 >
@@ -1552,7 +1529,10 @@ function ErrorBox({ message, retry }: { message: string; retry?: () => void }) {
   );
 }
 function Account() {
-  const { customer, authenticate, logout } = useStore();
+  const { customer, customerLoading, authenticate, logout, saveAddress } =
+    useStore();
+  const [accountParams] = useSearchParams();
+  const accountNavigate = useNavigate();
   const [mode, setMode] = useState("login"),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -1561,15 +1541,41 @@ function Account() {
     [working, setWorking] = useState(false),
     [orders, setOrders] = useState<Order[]>([]),
     [address, setAddress] = useState<Address>({ ...blankAddress });
+  const [ordersLoading, setOrdersLoading] = useState(false),
+    [ordersError, setOrdersError] = useState("");
+  const [ordersOwner, setOrdersOwner] = useState<number | null>(null),
+    [ordersRetry, setOrdersRetry] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   useTitle("Your account");
   useEffect(() => {
-    if (customer) {
-      setAddress({ ...blankAddress, ...customer.billing });
-      api<Order[]>("orders")
-        .then(setOrders)
-        .catch((e) => setMessage(e.message));
-    }
+    setAddress(
+      customer
+        ? { ...blankAddress, ...customer.billing, country: "IN" }
+        : { ...blankAddress },
+    );
   }, [customer]);
+  useEffect(() => {
+    let alive = true;
+    setOrders([]);
+    setOrdersOwner(customer?.id || null);
+    setOrdersError("");
+    setOrdersLoading(!!customer);
+    if (customer?.id) {
+      api<Order[]>("orders")
+        .then((value) => {
+          if (alive) setOrders(value);
+        })
+        .catch((e) => {
+          if (alive) setOrdersError(e.message);
+        })
+        .finally(() => {
+          if (alive) setOrdersLoading(false);
+        });
+    }
+    return () => {
+      alive = false;
+    };
+  }, [customer?.id, ordersRetry]);
   async function submit(e: FormEvent) {
     e.preventDefault();
     setWorking(true);
@@ -1580,7 +1586,14 @@ function Account() {
         setMessage(
           "If an account matches that email, a reset link will arrive shortly.",
         );
-      } else await authenticate(mode, { email, password, name });
+      } else {
+        await authenticate(mode, { email, password, name });
+        setPassword("");
+        setShowPassword(false);
+        const destination = accountParams.get("return");
+        if (destination === "/checkout/" || destination === "/cart/")
+          accountNavigate(destination);
+      }
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
@@ -1588,7 +1601,9 @@ function Account() {
     }
   }
   return (
-    <div className="wrap page account-page">
+    <div
+      className={`wrap page account-page ${customer ? "" : "account-page--guest"}`}
+    >
       <div className="collection-intro commerce-intro">
         <h1>
           {customer ? `Hello, ${customer.name.split(" ")[0]}.` : "Your account"}
@@ -1600,7 +1615,11 @@ function Account() {
           {message}
         </p>
       )}
-      {!customer ? (
+      {customerLoading ? (
+        <p className="catalogue-loading" role="status">
+          Opening your account…
+        </p>
+      ) : !customer ? (
         <div className="account-layout">
           <form onSubmit={submit}>
             <div className="account-tabs">
@@ -1644,7 +1663,7 @@ function Account() {
               <label>
                 Password
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   minLength={mode === "register" ? 12 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -1653,6 +1672,17 @@ function Account() {
                     mode === "register" ? "new-password" : "current-password"
                   }
                 />
+                <button
+                  className="text-link password-toggle"
+                  type="button"
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? "Hide password" : "Show password"}
+                </button>
+                {mode === "register" && (
+                  <small>Use at least 12 characters.</small>
+                )}
               </label>
             )}
             <button className="primary block" disabled={working}>
@@ -1685,17 +1715,44 @@ function Account() {
             </Link>
             <button
               className="text-link"
-              onClick={() => logout().catch((e) => setMessage(e.message))}
+              disabled={working}
+              onClick={async () => {
+                setWorking(true);
+                setMessage("");
+                try {
+                  await logout();
+                  setOrders([]);
+                  setOrdersOwner(null);
+                  setPassword("");
+                  setShowPassword(false);
+                } catch (error) {
+                  setMessage((error as Error).message);
+                } finally {
+                  setWorking(false);
+                }
+              }}
             >
               Sign out
             </button>
           </nav>
           <section>
             <h2>Your orders</h2>
-            {orders.length ? (
+            {ordersLoading || ordersOwner !== customer.id ? (
+              <p role="status">Loading your orders…</p>
+            ) : ordersError ? (
+              <ErrorBox
+                message={ordersError}
+                retry={() => setOrdersRetry((value) => value + 1)}
+              />
+            ) : orders.length ? (
               orders.map((o) => <OrderView key={o.id} order={o} />)
             ) : (
-              <p>No orders to show yet.</p>
+              <div className="account-orders-empty">
+                <p>Your orders will appear here after your first purchase.</p>
+                <Link className="text-link" to="/shop/">
+                  Explore the collection <ArrowRight size={16} />
+                </Link>
+              </div>
             )}
             <h2>Your billing address</h2>
             <form
@@ -1703,7 +1760,7 @@ function Account() {
                 e.preventDefault();
                 setWorking(true);
                 try {
-                  await api<Customer>("address", { billing: address });
+                  await saveAddress(address);
                   setMessage("Address saved.");
                 } catch (e) {
                   setMessage((e as Error).message);
@@ -1748,6 +1805,7 @@ function OrderView({ order: o }: { order: Order }) {
   );
 }
 function Tracking() {
+  const { customer } = useStore();
   const [id, setId] = useState(""),
     [key, setKey] = useState(""),
     [order, setOrder] = useState<Order | null>(null),
@@ -1759,8 +1817,9 @@ function Tracking() {
       <div className="collection-intro commerce-intro">
         <h1>Track your order</h1>
         <p>
-          Use your order number and the order key from your confirmation link,
-          or find your orders in your account.
+          {customer
+            ? "Enter the order number for an order in your account."
+            : "Use your order number and the order key from your confirmation link, or sign in to find your orders."}
         </p>
       </div>
       <form
@@ -1788,15 +1847,17 @@ function Tracking() {
             onChange={(e) => setId(e.target.value)}
           />
         </label>
-        <label>
-          Order key
-          <input
-            required
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            autoComplete="off"
-          />
-        </label>
+        {!customer && (
+          <label>
+            Order key
+            <input
+              required
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        )}
         <button className="primary" disabled={busy}>
           {busy ? "Checking…" : "Find my order"}
           <ArrowRight size={17} />
@@ -2029,7 +2090,7 @@ function Policy({ slug }: { slug: string }) {
   } | null>(null);
   useTitle(title);
   useEffect(() => {
-    fetch("/policies.json")
+    fetch(asset("/policies.json"))
       .then((r) => r.json())
       .then((p) => setContent(p[slug!]))
       .catch(() => setContent(null));

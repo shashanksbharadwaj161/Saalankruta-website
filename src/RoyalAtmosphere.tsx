@@ -23,6 +23,10 @@ export type AtmosphereDynamics = {
   energy: number;
   time: number;
 };
+type ConnectionPreference = EventTarget & {
+  saveData?: boolean;
+  effectiveType?: string;
+};
 
 const Gradient = lazy(() => import("./ShaderScene"));
 class SafeEffect extends Component<
@@ -64,6 +68,9 @@ export default function RoyalAtmosphere({
   useEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)"),
       transparency = matchMedia("(prefers-reduced-transparency: reduce)");
+    const connection = (
+      navigator as Navigator & { connection?: ConnectionPreference }
+    ).connection;
     let visible = false;
     const update = () =>
       setEnabled(
@@ -71,7 +78,9 @@ export default function RoyalAtmosphere({
           visible &&
           !document.hidden &&
           !reduced.matches &&
-          !transparency.matches,
+          !transparency.matches &&
+          !connection?.saveData &&
+          !["slow-2g", "2g"].includes(connection?.effectiveType || ""),
       );
     const observer = new IntersectionObserver(
       (entries) => {
@@ -83,11 +92,14 @@ export default function RoyalAtmosphere({
     if (ref.current) observer.observe(ref.current);
     reduced.addEventListener("change", update);
     transparency.addEventListener("change", update);
+    connection?.addEventListener("change", update);
     document.addEventListener("visibilitychange", update);
+    update();
     return () => {
       observer.disconnect();
       reduced.removeEventListener("change", update);
       transparency.removeEventListener("change", update);
+      connection?.removeEventListener("change", update);
       document.removeEventListener("visibilitychange", update);
     };
   }, [active]);

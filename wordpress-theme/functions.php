@@ -23,6 +23,16 @@ add_filter('template_include', function($template) {
 // The compiled pages provide canonical tags; WordPress must not guess app URLs.
 add_filter('redirect_canonical', fn($redirect) => false);
 
+// WordPress 6.6 redirects sitemap.xml during 404 handling, before
+// template_redirect. Let the compiled sitemap reach our handler below.
+add_filter('pre_handle_404', function($preempt) {
+    if ($preempt) return $preempt;
+    $path = wp_parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    return $path === '/sitemap.xml' && is_file(get_template_directory().'/sitemap.xml')
+        ? true
+        : $preempt;
+}, 0);
+
 add_action('template_redirect', function() {
     $path = wp_parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     if ($path === '/wp-sitemap.xml') {

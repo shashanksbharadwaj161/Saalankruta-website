@@ -34,7 +34,15 @@ export default function Modal({
         close();
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) close();
+        if (e.target !== e.currentTarget) return;
+        const bounds = e.currentTarget.getBoundingClientRect();
+        if (
+          e.clientX < bounds.left ||
+          e.clientX > bounds.right ||
+          e.clientY < bounds.top ||
+          e.clientY > bounds.bottom
+        )
+          close();
       }}
     >
       {children}

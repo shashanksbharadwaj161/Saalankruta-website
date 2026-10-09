@@ -33,8 +33,8 @@ Read `PRODUCT.md` and `DESIGN.md` before changing catalogue order or design conv
 
 ## Deployment status
 
-The live WordPress site has not been replaced. Theme/plugin installation, a verified current backup, preview approval, email delivery, approved shipping/return values and payment gateway testing remain launch tasks. Ordering in the new frontend is disabled by default.
+The coded theme **1.1.1** is active at **saalankruta.com** as of 9 October 2026, using the existing WordPress installation and WooCommerce connection. The redesign was installed through WordPress's theme ZIP replacement flow after checking the Hostinger backup and retaining the prior theme package. All 143 published products match the release snapshot. Production ordering remains disabled while payment integration, email delivery and business policies are completed. See `docs/verification.md` for the actual hosted checks and remaining limits.
 
-Follow `docs/deployment.md`. Deploy theme files only into `public_html/wp-content/themes/saalankruta`, never over the WordPress root. Keep the existing active theme until review is complete. The deployment branch contains the compiled theme and PHP gateway; install the commerce plugin separately. Never commit payment or database secrets.
+Follow `docs/deployment.md`. Deploy theme files only into `public_html/wp-content/themes/saalankruta`, never over the WordPress root. Updates to this active theme affect the public site immediately; retain a verified rollback package first. The deployment branch contains the compiled theme and PHP gateway; maintain the commerce plugin separately. Never commit payment or database secrets.
 
-Actions uploads the compiled theme artifact. Publishing the `deploy` branch is enabled through `PUBLISH_DEPLOY_BRANCH=true`; this does not activate the WordPress theme or replace the live store. The Hostinger GitHub app now has access to this repository.
+Actions uploads the compiled theme artifact. Publishing the `deploy` branch is enabled through `PUBLISH_DEPLOY_BRANCH=true`. The Hostinger GitHub app has access to this repository, but the ZIP update does not establish automatic Hostinger delivery. Verify that connection separately before relying on Git synchronization.

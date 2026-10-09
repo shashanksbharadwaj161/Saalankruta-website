@@ -96,9 +96,11 @@ const RoseSilk = memo(function RoseSilk() {
       control="props"
       type="waterPlane"
       animate="off"
-      color1="#fce8f1"
-      color2="#dc91b7"
-      color3="#f1dba8"
+      // waterPlane extrapolates the third colour along its waves. Keeping the
+      // champagne close to rose prevents the opposite folds turning violet.
+      color1="#fff1ef"
+      color2="#eaa0b2"
+      color3="#f5dcd0"
       uTime={0}
       uSpeed={0.38}
       uStrength={2.2}

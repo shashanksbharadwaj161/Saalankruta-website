@@ -24,7 +24,14 @@ export interface Product {
     currency_minor_unit: number;
     currency_code: string;
   };
-  images: { id: number; src: string; thumbnail: string; alt: string }[];
+  images: {
+    id: number;
+    src: string;
+    thumbnail: string;
+    alt: string;
+    srcset?: string;
+    sizes?: string;
+  }[];
   categories: { id: number; name: string; slug: string }[];
   attributes: {
     id: number;
@@ -62,11 +69,18 @@ export interface Cart {
     key: string;
     id: number;
     name: string;
+    permalink?: string;
+    variation?: { attribute: string; value: string }[];
     quantity: number;
     images: Product["images"];
     prices: Product["prices"];
     totals: { line_total: string };
-    quantity_limits: { minimum: number; maximum: number };
+    quantity_limits: {
+      minimum: number;
+      maximum: number;
+      multiple_of?: number;
+      editable?: boolean;
+    };
   }[];
   totals: {
     total_items: string;

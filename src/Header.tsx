@@ -1,6 +1,6 @@
 import { asset } from "./assets";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,171 +14,78 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { inCategory } from "./catalogue";
+import { filterProducts, inCategory, productPrice, text } from "./catalogue";
 import { useStore } from "./store";
 import Modal from "./Modal";
 
 type CollectionLink = { name: string; slug: string };
-type NavigationGroup = {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  href: string;
-  featured: string;
-  columns: { title: string; links: CollectionLink[] }[];
-};
+type CollectionGroup = { name: string; slug: string; links: CollectionLink[] };
 const path = (slug: string) => `/product-category/${slug}/`;
-const groups: NavigationGroup[] = [
+const groups: CollectionGroup[] = [
   {
-    id: "all",
-    name: "All Jewellery",
-    title: "Find your next piece.",
-    description:
-      "From a daily favourite to the finishing touch for a celebration.",
-    href: "/shop/",
-    featured: "necklace",
-    columns: [
-      {
-        title: "Jewellery",
-        links: [
-          { name: "Necklaces", slug: "necklace" },
-          { name: "Haras", slug: "hara" },
-          { name: "Bangles", slug: "bangles" },
-          { name: "Earrings", slug: "earrings" },
-          { name: "Finger rings", slug: "finger-rings" },
-          { name: "Combo sets", slug: "combo-set" },
-        ],
-      },
-      {
-        title: "The finishing touches",
-        links: [
-          { name: "Matti", slug: "matti" },
-          { name: "Nose pins", slug: "nose-pin" },
-          { name: "Hair accessories", slug: "hair-accessories" },
-          { name: "Netti chutti", slug: "netti-chutti" },
-          { name: "Gift items", slug: "gift-items" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "necklaces",
     name: "Necklaces & Haras",
-    title: "A beautiful beginning.",
-    description:
-      "Explore necklaces, long haras and pendants, all in one place.",
-    href: path("necklace"),
-    featured: "necklace",
-    columns: [
-      {
-        title: "Explore the collection",
-        links: [
-          { name: "All necklaces", slug: "necklace" },
-          { name: "Haras", slug: "hara" },
-          { name: "Hara collection", slug: "hara-hara" },
-          { name: "Pendants", slug: "pendent" },
-          { name: "Pendant & earring sets", slug: "pendent-earring" },
-        ],
-      },
+    slug: "necklace",
+    links: [
+      { name: "Necklaces", slug: "necklace" },
+      { name: "Haras", slug: "hara" },
+      { name: "Hara collection", slug: "hara-hara" },
+      { name: "Pendants", slug: "pendent" },
+      { name: "Pendant & earring sets", slug: "pendent-earring" },
     ],
   },
   {
-    id: "bangles",
     name: "Bangles",
-    title: "Beauty, around you.",
-    description: "Choose your bangles by style, from daily pieces to kadas.",
-    href: path("bangles"),
-    featured: "bangles",
-    columns: [
-      {
-        title: "Explore the collection",
-        links: [
-          { name: "All bangles", slug: "bangles" },
-          { name: "Daily use bangles", slug: "daily-use-bangles" },
-          { name: "Antique bangles", slug: "antique-bangle" },
-          { name: "CZ & stone", slug: "cz-stone" },
-          { name: "Kadas", slug: "kada" },
-          { name: "More bangles", slug: "uncategorized" },
-        ],
-      },
+    slug: "bangles",
+    links: [
+      { name: "All bangles", slug: "bangles" },
+      { name: "Daily use bangles", slug: "daily-use-bangles" },
+      { name: "Antique bangles", slug: "antique-bangle" },
+      { name: "CZ & stone", slug: "cz-stone" },
+      { name: "Kadas", slug: "kada" },
+      { name: "More bangles", slug: "uncategorized" },
     ],
   },
   {
-    id: "earrings",
     name: "Earrings",
-    title: "The smallest statement.",
-    description: "Discover earrings and studs for the way you dress every day.",
-    href: path("earrings"),
-    featured: "earrings",
-    columns: [
-      {
-        title: "Explore the collection",
-        links: [
-          { name: "All earrings", slug: "earrings" },
-          { name: "CZ studs", slug: "cz-studs" },
-          { name: "Daily use studs", slug: "daily-use-studs" },
-          { name: "Matti", slug: "matti" },
-        ],
-      },
+    slug: "earrings",
+    links: [
+      { name: "All earrings", slug: "earrings" },
+      { name: "CZ studs", slug: "cz-studs" },
+      { name: "Daily use studs", slug: "daily-use-studs" },
     ],
   },
   {
-    id: "bridal",
     name: "Bridal & Sets",
-    title: "For your special day.",
-    description:
-      "Bring your look together with sets and traditional accessories.",
-    href: path("combo-set"),
-    featured: "bridal-set",
-    columns: [
-      {
-        title: "Sets",
-        links: [
-          { name: "Combo sets", slug: "combo-set" },
-          { name: "Bridal sets", slug: "bridal-set" },
-          { name: "Pendant & earring sets", slug: "pendent-earring" },
-        ],
-      },
-      {
-        title: "Complete your look",
-        links: [
-          { name: "Hair accessories", slug: "hair-accessories" },
-          { name: "Netti chutti", slug: "netti-chutti" },
-          { name: "Matti", slug: "matti" },
-          { name: "Nose pins", slug: "nose-pin" },
-          { name: "Finger rings", slug: "finger-rings" },
-        ],
-      },
+    slug: "combo-set",
+    links: [
+      { name: "Combo sets", slug: "combo-set" },
+      { name: "Bridal sets", slug: "bridal-set" },
+      { name: "Pendant & earring sets", slug: "pendent-earring" },
     ],
   },
   {
-    id: "gifts",
+    name: "Finishing touches",
+    slug: "hair-accessories",
+    links: [
+      { name: "Finger rings", slug: "finger-rings" },
+      { name: "Matti", slug: "matti" },
+      { name: "Nose pins", slug: "nose-pin" },
+      { name: "Hair accessories", slug: "hair-accessories" },
+      { name: "Netti chutti", slug: "netti-chutti" },
+    ],
+  },
+  {
     name: "Gifts",
-    title: "A thought, beautifully given.",
-    description:
-      "Discover gift items for the people and occasions you hold close.",
-    href: path("gift-items"),
-    featured: "gift-items",
-    columns: [
-      {
-        title: "Explore the collection",
-        links: [
-          { name: "All gift items", slug: "gift-items" },
-          { name: "Kumkumbharani", slug: "kumkumbharani" },
-          {
-            name: "Silver plated gift items",
-            slug: "silver-plated-gift-items",
-          },
-        ],
-      },
+    slug: "gift-items",
+    links: [
+      { name: "All gift items", slug: "gift-items" },
+      { name: "Kumkumbharani", slug: "kumkumbharani" },
+      { name: "Silver plated gift items", slug: "silver-plated-gift-items" },
     ],
   },
 ];
 const knownCategories = new Set(
-  groups.flatMap((group) =>
-    group.columns.flatMap((column) => column.links.map((link) => link.slug)),
-  ),
+  groups.flatMap((group) => group.links.map((link) => link.slug)),
 );
 const policies = [
   { name: "Shipping & delivery", slug: "shipping-and-delivery" },
@@ -187,160 +94,330 @@ const policies = [
   { name: "Terms & conditions", slug: "terms-and-conditions" },
 ];
 
+function JewellerySearch({ close }: { close: () => void }) {
+  const { products, categories, loading, catalogueError } = useStore();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    // React's autoFocus runs while the parent dialog is still closed. Wait for
+    // its native showModal() effect before moving focus to the search field.
+    const frame = requestAnimationFrame(() =>
+      input.current?.focus({ preventScroll: true }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const term = query.trim();
+  // Match common collection plurals to the singular names used in WooCommerce.
+  // Use the same term on the full results page so its count stays consistent.
+  const searchTerm = term.replace(
+    /\b(necklaces|bangles|earrings|rings)\b/gi,
+    (word) => word.slice(0, -1),
+  );
+  const matches = useMemo(
+    () =>
+      term.length < 2
+        ? []
+        : filterProducts(products, categories, { query: searchTerm }),
+    [products, categories, term.length, searchTerm],
+  );
+  const results = matches.slice(0, 6);
+  const unavailable = !products.length && Boolean(catalogueError) && !loading;
+  const resultLabel =
+    loading && !products.length
+      ? "Loading the collection…"
+      : unavailable
+        ? "The collection is temporarily unavailable."
+        : term.length < 2
+          ? "Search by a piece, colour or detail."
+          : `${matches.length} ${matches.length === 1 ? "piece" : "pieces"} found`;
+  return (
+    <Modal
+      label="Search jewellery"
+      className="boutique-search-overlay"
+      close={close}
+    >
+      <div className="boutique-search-content">
+        <div className="boutique-overlay-top">
+          <span className="boutique-small-label">Discover Saalankruta</span>
+          <button
+            className="boutique-icon"
+            aria-label="Close search"
+            onClick={close}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        <div className="boutique-search-heading">
+          <h2>
+            A piece of <em>you.</em>
+          </h2>
+          <p>Find the details you love.</p>
+        </div>
+        <form
+          className="boutique-search-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!term) return;
+            navigate(`/shop/?q=${encodeURIComponent(searchTerm)}`);
+            close();
+          }}
+        >
+          <Search size={22} aria-hidden="true" />
+          <input
+            ref={input}
+            type="search"
+            name="q"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            autoFocus
+            autoComplete="off"
+            placeholder="Try necklaces, bangles, earrings…"
+            aria-label="Search jewellery"
+            aria-describedby="boutique-search-status"
+          />
+          {query && (
+            <button
+              className="boutique-search-clear"
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setQuery("");
+                input.current?.focus();
+              }}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          )}
+          <button
+            className="boutique-search-submit"
+            type="submit"
+            aria-label="See all search results"
+            disabled={!term}
+          >
+            <ArrowRight size={23} aria-hidden="true" />
+          </button>
+        </form>
+        <div className="boutique-search-results">
+          <p
+            id="boutique-search-status"
+            className="boutique-search-status"
+            role="status"
+            aria-live="polite"
+          >
+            {resultLabel}
+          </p>
+          {loading && !products.length ? (
+            <div className="boutique-search-skeleton" aria-hidden="true">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item}>
+                  <span />
+                  <i />
+                </div>
+              ))}
+            </div>
+          ) : unavailable ? (
+            <p className="boutique-search-empty">
+              Please try again shortly, or{" "}
+              <Link to="/contact/">contact the boutique</Link>.
+            </p>
+          ) : term.length >= 2 ? (
+            <>
+              {results.length > 0 ? (
+                <ul className="boutique-search-grid">
+                  {results.map((product) => (
+                    <li key={product.id}>
+                      <Link to={`/product/${product.slug}/`}>
+                        <div className="boutique-search-image">
+                          {product.images[0] ? (
+                            <img
+                              src={
+                                product.images[0].thumbnail ||
+                                product.images[0].src
+                              }
+                              srcSet={product.images[0].srcset}
+                              sizes="(max-width: 600px) 78px, 74px"
+                              alt=""
+                              width="90"
+                              height="108"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <ShoppingBag aria-hidden="true" />
+                          )}
+                        </div>
+                        <div className="boutique-search-product">
+                          <span>{text(product.name)}</span>
+                          <strong>{productPrice(product)}</strong>
+                          {!product.is_in_stock && (
+                            <small>Currently unavailable</small>
+                          )}
+                        </div>
+                        <ArrowUpRight size={17} aria-hidden="true" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="boutique-search-empty">
+                  <h3>No pieces found for “{term}”.</h3>
+                  <p>Try a shorter search, such as “necklace” or “studs”.</p>
+                  <Link to="/shop/">
+                    Explore all jewellery{" "}
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+              )}
+              {matches.length > 0 && (
+                <Link
+                  className="boutique-search-all"
+                  to={`/shop/?q=${encodeURIComponent(searchTerm)}`}
+                >
+                  View all {matches.length}{" "}
+                  {matches.length === 1 ? "piece" : "pieces"}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+              )}
+            </>
+          ) : (
+            <div className="boutique-search-suggestions">
+              <span className="boutique-small-label">
+                Begin with a collection
+              </span>
+              <div>
+                {groups
+                  .filter((group) => group.slug !== "hair-accessories")
+                  .map((group) => (
+                    <Link key={group.slug} to={path(group.slug)}>
+                      {group.name}
+                      <ArrowUpRight size={15} aria-hidden="true" />
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Header() {
   const { cart, wishlist, customer, products, categories } = useStore();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState(false);
-  const [dropdown, setDropdown] = useState("");
+  const [dropdown, setDropdown] = useState(false);
   const [mobileGroup, setMobileGroup] = useState("");
   const header = useRef<HTMLElement>(null);
-  const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
+  const collectionTrigger = useRef<HTMLButtonElement>(null);
+  const searchTrigger = useRef<HTMLButtonElement>(null);
   const location = useLocation();
   const count = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
-  const group = groups.find((item) => item.id === dropdown);
-  const featured = group
-    ? products.find(
-        (product) =>
-          inCategory(product, group.featured, categories) &&
-          product.images.length,
-      )
-    : undefined;
-  const extraCategories = categories.filter(
+  const featured =
+    products.find(
+      (product) =>
+        inCategory(product, "necklace", categories) &&
+        product.is_in_stock &&
+        product.images.length,
+    ) || products.find((product) => product.images.length);
+  const extras = categories.filter(
     (category) => !knownCategories.has(category.slug),
   );
-
   useEffect(() => {
     setOpen(false);
     setSearch(false);
-    setDropdown("");
+    setDropdown(false);
     setMobileGroup("");
   }, [location.pathname, location.search]);
-
+  useEffect(() => {
+    const desktop = matchMedia("(min-width: 1100px)");
+    const reset = () => {
+      setOpen(false);
+      setDropdown(false);
+    };
+    desktop.addEventListener("change", reset);
+    return () => desktop.removeEventListener("change", reset);
+  }, []);
   useEffect(() => {
     const glass = header.current;
-    const surface = glass?.querySelector<HTMLElement>(".boutique-brand-row");
-    if (!glass || !surface) return;
-    const supported =
-      CSS.supports("backdrop-filter", "blur(1px)") ||
-      CSS.supports("-webkit-backdrop-filter", "blur(1px)");
-    if (!supported) return;
+    if (!glass) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     const transparency = matchMedia("(prefers-reduced-transparency: reduce)");
     let frame = 0;
     let x = 50;
-    let y = 30;
     const reset = () => {
       cancelAnimationFrame(frame);
       frame = 0;
       glass.style.setProperty("--glass-glint", "0");
     };
-    const update = (clientX: number, clientY: number) => {
-      if (motion.matches || transparency.matches) return;
+    const move = (event: PointerEvent) => {
+      if (
+        motion.matches ||
+        transparency.matches ||
+        event.pointerType === "touch"
+      )
+        return;
       const bounds = glass.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
-      x = Math.max(
-        0,
-        Math.min(100, ((clientX - bounds.left) / bounds.width) * 100),
-      );
-      y = Math.max(
-        0,
-        Math.min(100, ((clientY - bounds.top) / bounds.height) * 100),
-      );
+      x = ((event.clientX - bounds.left) / bounds.width) * 100;
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
         glass.style.setProperty("--glass-x", `${x}%`);
-        glass.style.setProperty("--glass-y", `${y}%`);
         glass.style.setProperty("--glass-glint", "1");
       });
     };
-    const pointer = (event: PointerEvent) => {
-      if (event.pointerType !== "touch") update(event.clientX, event.clientY);
-    };
-    const touch = (event: TouchEvent) => {
-      const point = event.touches[0];
-      if (point) update(point.clientX, point.clientY);
-    };
-    const passive = { passive: true } as const;
-    surface.addEventListener("pointerenter", pointer, passive);
-    surface.addEventListener("pointermove", pointer, passive);
-    surface.addEventListener("pointerdown", pointer, passive);
-    surface.addEventListener("pointerleave", reset, passive);
-    surface.addEventListener("pointerup", reset, passive);
-    surface.addEventListener("pointercancel", reset, passive);
-    surface.addEventListener("touchstart", touch, passive);
-    surface.addEventListener("touchmove", touch, passive);
-    surface.addEventListener("touchend", reset, passive);
-    surface.addEventListener("touchcancel", reset, passive);
+    glass.addEventListener("pointermove", move, { passive: true });
+    glass.addEventListener("pointerleave", reset);
     motion.addEventListener("change", reset);
     transparency.addEventListener("change", reset);
     return () => {
       reset();
-      surface.removeEventListener("pointerenter", pointer);
-      surface.removeEventListener("pointermove", pointer);
-      surface.removeEventListener("pointerdown", pointer);
-      surface.removeEventListener("pointerleave", reset);
-      surface.removeEventListener("pointerup", reset);
-      surface.removeEventListener("pointercancel", reset);
-      surface.removeEventListener("touchstart", touch);
-      surface.removeEventListener("touchmove", touch);
-      surface.removeEventListener("touchend", reset);
-      surface.removeEventListener("touchcancel", reset);
+      glass.removeEventListener("pointermove", move);
+      glass.removeEventListener("pointerleave", reset);
       motion.removeEventListener("change", reset);
       transparency.removeEventListener("change", reset);
     };
   }, []);
-
   useEffect(() => {
     if (!dropdown) return;
-    const closeOutside = (event: PointerEvent) => {
-      if (!header.current?.contains(event.target as Node)) setDropdown("");
+    const outside = (event: PointerEvent) => {
+      if (!header.current?.contains(event.target as Node)) setDropdown(false);
     };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
   }, [dropdown]);
-
-  function navigateKeys(event: KeyboardEvent<HTMLButtonElement>, id: string) {
-    if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
-      event.preventDefault();
-      const index = groups.findIndex((item) => item.id === id);
-      const nextIndex =
-        event.key === "Home"
-          ? 0
-          : event.key === "End"
-            ? groups.length - 1
-            : (index + (event.key === "ArrowDown" ? 1 : -1) + groups.length) %
-              groups.length;
-      const next = groups[nextIndex];
-      setDropdown(next.id);
-      triggers.current[next.id]?.focus();
-    }
-  }
-
-  function openSearch() {
+  const closeCollections = () => {
+    setDropdown(false);
+    collectionTrigger.current?.focus();
+  };
+  const openSearch = () => {
     setOpen(false);
-    setDropdown("");
+    setDropdown(false);
     setSearch(true);
-  }
+  };
+  const closeSearch = () => {
+    setSearch(false);
+    requestAnimationFrame(() => searchTrigger.current?.focus());
+  };
 
   return (
     <>
       <header
         className="header boutique-header"
         ref={header}
-        data-menu-open={Boolean(dropdown)}
+        data-menu-open={dropdown}
         onBlur={(event) => {
           if (
             event.relatedTarget &&
             !event.currentTarget.contains(event.relatedTarget)
           )
-            setDropdown("");
+            setDropdown(false);
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape" && dropdown) {
             event.preventDefault();
-            triggers.current.collections?.focus();
-            setDropdown("");
+            closeCollections();
           }
         }}
       >
@@ -349,34 +426,31 @@ export default function Header() {
             <button
               className="boutique-icon boutique-mobile-toggle"
               aria-label="Open navigation"
+              aria-haspopup="dialog"
               onClick={() => setOpen(true)}
             >
               <Menu aria-hidden="true" />
             </button>
             <button
               className="boutique-collections-trigger"
-              ref={(element) => {
-                triggers.current.collections = element;
-              }}
-              aria-expanded={Boolean(dropdown)}
+              ref={collectionTrigger}
+              aria-expanded={dropdown}
               aria-controls="boutique-collections-menu"
-              onClick={() => setDropdown(dropdown ? "" : "all")}
+              onClick={() => setDropdown(!dropdown)}
               onKeyDown={(event) => {
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
-                  setDropdown(dropdown || "all");
+                  setDropdown(true);
                   requestAnimationFrame(() =>
                     header.current
-                      ?.querySelector<HTMLButtonElement>(
-                        '.boutique-mega-rail [aria-selected="true"]',
-                      )
+                      ?.querySelector<HTMLAnchorElement>(".boutique-mega a")
                       ?.focus(),
                   );
                 }
               }}
             >
               <span>Collections</span>
-              <ChevronDown size={14} aria-hidden="true" />
+              <ChevronDown size={13} aria-hidden="true" />
             </button>
             <Link className="boutique-story-link" to="/about/">
               Our story
@@ -393,11 +467,13 @@ export default function Header() {
           <div className="boutique-utilities">
             <button
               className="boutique-icon boutique-header-search"
+              ref={searchTrigger}
               aria-label="Search products"
               onClick={openSearch}
               aria-haspopup="dialog"
             >
               <Search aria-hidden="true" />
+              <span>Search</span>
             </button>
             <Link
               className="boutique-utility boutique-account"
@@ -424,289 +500,246 @@ export default function Header() {
             </Link>
           </div>
         </div>
-        {group && (
-          <div
-            className="boutique-mega"
-            id="boutique-collections-menu"
-            aria-label={`${group.name} collections`}
-          >
-            <div
-              className="boutique-mega-rail"
-              role="tablist"
-              aria-label="Collection groups"
-              aria-orientation="vertical"
-            >
+        {dropdown && (
+          <div className="boutique-mega" id="boutique-collections-menu">
+            <div className="boutique-mega-top">
               <span className="boutique-small-label">The collections</span>
-              {groups.map((item) => (
-                <button
-                  key={item.id}
-                  id={`collection-tab-${item.id}`}
-                  role="tab"
-                  aria-selected={dropdown === item.id}
-                  aria-controls="boutique-category-panel"
-                  tabIndex={dropdown === item.id ? 0 : -1}
-                  ref={(element) => {
-                    triggers.current[item.id] = element;
-                  }}
-                  onClick={() => setDropdown(item.id)}
-                  onKeyDown={(event) => navigateKeys(event, item.id)}
-                >
-                  {item.name}
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-            <div
-              className="boutique-mega-body"
-              id="boutique-category-panel"
-              role="tabpanel"
-              aria-labelledby={`collection-tab-${group.id}`}
-              tabIndex={0}
-            >
-              <div className="boutique-mega-intro">
-                <h2>{group.title}</h2>
-                <p>{group.description}</p>
-                <Link to={group.href}>
-                  Explore{" "}
-                  {group.id === "all"
-                    ? "all jewellery"
-                    : group.id === "necklaces"
-                      ? "necklaces"
-                      : group.id === "bridal"
-                        ? "sets"
-                        : group.name.toLowerCase()}{" "}
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
-              </div>
-              <div className="boutique-mega-columns">
-                {group.columns.map((column) => (
-                  <div className="boutique-mega-column" key={column.title}>
-                    <h3>{column.title}</h3>
-                    {column.links.map((link) => (
-                      <Link to={path(link.slug)} key={link.slug}>
-                        {link.name}
-                        <ArrowUpRight size={14} aria-hidden="true" />
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-                {group.id === "all" && extraCategories.length > 0 && (
-                  <div className="boutique-mega-column">
-                    <h3>More collections</h3>
-                    {extraCategories.map((category) => (
-                      <Link to={path(category.slug)} key={category.id}>
-                        {category.name.replace(/&amp;/g, "&")}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            {featured && (
-              <Link
-                className="boutique-mega-piece"
-                to={`/product/${featured.slug}/`}
-              >
-                <div>
-                  <img
-                    src={featured.images[0].src}
-                    alt={featured.images[0].alt || featured.name}
-                    loading="lazy"
-                  />
-                </div>
-                <span>
-                  {featured.name}
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </span>
+              <Link to="/shop/">
+                Discover all jewellery{" "}
+                <ArrowUpRight size={16} aria-hidden="true" />
               </Link>
-            )}
-            <button
-              className="boutique-icon boutique-mega-close"
-              aria-label="Close collection menu"
-              onClick={() => {
-                triggers.current.collections?.focus();
-                setDropdown("");
-              }}
-            >
-              <X aria-hidden="true" />
-            </button>
+              <button
+                className="boutique-icon"
+                aria-label="Close collection menu"
+                onClick={closeCollections}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <div className="boutique-mega-layout">
+              <nav
+                className="boutique-mega-primary"
+                aria-label="Jewellery collections"
+              >
+                {groups
+                  .filter((group) => group.slug !== "hair-accessories")
+                  .map((group, index) => (
+                    <Link key={group.slug} to={path(group.slug)}>
+                      <small>0{index + 1}</small>
+                      <span>{group.name}</span>
+                      <ArrowUpRight size={19} aria-hidden="true" />
+                    </Link>
+                  ))}
+                <Link className="boutique-mega-all" to="/shop/">
+                  View every piece <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </nav>
+              <div className="boutique-mega-details">
+                <nav aria-label="Jewellery styles">
+                  <h2>Explore the details</h2>
+                  {[
+                    { name: "Haras", slug: "hara" },
+                    { name: "Hara collection", slug: "hara-hara" },
+                    { name: "Pendants", slug: "pendent" },
+                    { name: "Pendant & earring sets", slug: "pendent-earring" },
+                    { name: "Bridal sets", slug: "bridal-set" },
+                    ...groups[4].links,
+                  ].map((link) => (
+                    <Link key={link.slug} to={path(link.slug)}>
+                      {link.name}
+                    </Link>
+                  ))}
+                </nav>
+                <nav aria-label="Bangle, earring and gift styles">
+                  <h2>Find your style</h2>
+                  {[
+                    ...groups[1].links.slice(1),
+                    ...groups[2].links.slice(1),
+                    ...groups[5].links.slice(1),
+                  ].map((link) => (
+                    <Link key={link.slug} to={path(link.slug)}>
+                      {link.name}
+                    </Link>
+                  ))}
+                  {extras.map((category) => (
+                    <Link key={category.slug} to={path(category.slug)}>
+                      {text(category.name)}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+              {featured && (
+                <Link
+                  className="boutique-mega-piece"
+                  to={`/product/${featured.slug}/`}
+                >
+                  <div className="boutique-mega-image">
+                    <img
+                      src={featured.images[0].src}
+                      srcSet={featured.images[0].srcset}
+                      sizes="(max-width: 1279px) 23vw, 25vw"
+                      alt={featured.images[0].alt || text(featured.name)}
+                      width="400"
+                      height="460"
+                      loading="lazy"
+                    />
+                    <span>
+                      In the collection{" "}
+                      <ArrowUpRight size={18} aria-hidden="true" />
+                    </span>
+                  </div>
+                  <div className="boutique-mega-caption">
+                    <span>{text(featured.name)}</span>
+                    <strong>{productPrice(featured)}</strong>
+                  </div>
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </header>
+      {dropdown && (
+        <button
+          type="button"
+          tabIndex={-1}
+          className="boutique-menu-scrim"
+          aria-label="Close collection menu backdrop"
+          onClick={closeCollections}
+        />
+      )}
       {open && (
         <Modal
           label="Navigation"
           className="boutique-navigation-overlay"
           close={() => setOpen(false)}
         >
-          <div className="boutique-overlay-top">
-            <Link to="/" aria-label="Saalankruta home">
-              <img
-                src={asset("/logo.png")}
-                width="170"
-                height="56"
-                alt="Saalankruta"
-              />
-            </Link>
-            <button
-              className="boutique-icon"
-              onClick={() => setOpen(false)}
-              aria-label="Close navigation"
-            >
-              <X aria-hidden="true" />
-            </button>
-          </div>
-          <div className="boutique-mobile-menu-content">
-            <button className="boutique-mobile-find" onClick={openSearch}>
-              <Search size={19} aria-hidden="true" />
-              <span>Find a piece</span>
-              <ArrowRight size={19} aria-hidden="true" />
-            </button>
-            <span className="boutique-small-label">Discover Saalankruta</span>
-            <nav
-              className="boutique-mobile-collections"
-              aria-label="Mobile navigation"
-            >
-              <Link className="boutique-mobile-all" to="/shop/">
-                All jewellery <ArrowUpRight size={24} aria-hidden="true" />
+          <div className="boutique-mobile-content">
+            <div className="boutique-overlay-top">
+              <Link to="/" aria-label="Saalankruta home">
+                <img
+                  src={asset("/logo.png")}
+                  width="170"
+                  height="56"
+                  alt="Saalankruta"
+                />
               </Link>
-              {groups
-                .filter((item) => item.id !== "all")
-                .map((item) => (
-                  <div className="boutique-mobile-group" key={item.id}>
-                    <button
-                      aria-expanded={mobileGroup === item.id}
-                      aria-controls={`mobile-collections-${item.id}`}
-                      onClick={() =>
-                        setMobileGroup(mobileGroup === item.id ? "" : item.id)
-                      }
-                    >
-                      <span>{item.name}</span>
-                      {mobileGroup === item.id ? (
-                        <Minus size={19} aria-hidden="true" />
-                      ) : (
-                        <Plus size={19} aria-hidden="true" />
-                      )}
-                    </button>
-                    {mobileGroup === item.id && (
+              <button
+                className="boutique-icon"
+                onClick={() => setOpen(false)}
+                aria-label="Close navigation"
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <div className="boutique-mobile-menu-content">
+              <button className="boutique-mobile-find" onClick={openSearch}>
+                <Search size={19} aria-hidden="true" />
+                <span>Find a piece you love</span>
+                <ArrowRight size={19} aria-hidden="true" />
+              </button>
+              <div className="boutique-mobile-intro">
+                <span className="boutique-small-label">The collections</span>
+                <Link to="/shop/">
+                  View all <ArrowUpRight size={15} aria-hidden="true" />
+                </Link>
+              </div>
+              <nav
+                className="boutique-mobile-collections"
+                aria-label="Mobile collections"
+              >
+                {groups.map((group, index) => (
+                  <div className="boutique-mobile-group" key={group.slug}>
+                    <div className="boutique-mobile-group-top">
+                      <Link to={path(group.slug)}>
+                        <small>0{index + 1}</small>
+                        {group.name}
+                      </Link>
+                      <button
+                        aria-label={`${mobileGroup === group.slug ? "Hide" : "Show"} ${group.name} styles`}
+                        aria-expanded={mobileGroup === group.slug}
+                        aria-controls={`mobile-collections-${group.slug}`}
+                        onClick={() =>
+                          setMobileGroup(
+                            mobileGroup === group.slug ? "" : group.slug,
+                          )
+                        }
+                      >
+                        {mobileGroup === group.slug ? (
+                          <Minus size={18} aria-hidden="true" />
+                        ) : (
+                          <Plus size={18} aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                    {mobileGroup === group.slug && (
                       <div
                         className="boutique-mobile-children"
-                        id={`mobile-collections-${item.id}`}
+                        id={`mobile-collections-${group.slug}`}
                       >
-                        {item.columns.map((column) => (
-                          <div key={column.title}>
-                            {item.columns.length > 1 && <h3>{column.title}</h3>}
-                            {column.links.map((link) => (
-                              <Link key={link.slug} to={path(link.slug)}>
-                                {link.name}
-                                <ArrowUpRight size={15} aria-hidden="true" />
-                              </Link>
-                            ))}
-                          </div>
+                        {group.links.map((link) => (
+                          <Link key={link.slug} to={path(link.slug)}>
+                            {link.name}
+                            <ArrowUpRight size={15} aria-hidden="true" />
+                          </Link>
                         ))}
                       </div>
                     )}
                   </div>
                 ))}
-              {extraCategories.map((category) => (
-                <Link
-                  className="boutique-mobile-extra"
-                  key={category.id}
-                  to={path(category.slug)}
-                >
-                  {category.name.replace(/&amp;/g, "&")}
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
-              ))}
-            </nav>
-            <nav
-              className="boutique-mobile-personal"
-              aria-label="Your shopping"
-            >
-              <Link to="/account/">
-                <UserRound size={19} aria-hidden="true" />
-                <span>{customer ? "Your account" : "Sign in / Register"}</span>
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-              <Link to="/wishlist/">
-                <Heart size={19} aria-hidden="true" />
-                <span>Wishlist</span>
-                <small>{wishlist.length} pieces</small>
-              </Link>
-              <Link to="/cart/">
-                <ShoppingBag size={19} aria-hidden="true" />
-                <span>Shopping bag</span>
-                <small>{count} pieces</small>
-              </Link>
-            </nav>
-            <nav
-              className="boutique-mobile-care"
-              aria-label="About and customer care"
-            >
-              <Link to="/about/">Our story</Link>
-              <Link to="/contact/">Contact us</Link>
-              <Link to="/track-order/">Track your order</Link>
-              {policies.map((policy) => (
-                <Link key={policy.slug} to={`/${policy.slug}/`}>
-                  {policy.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </Modal>
-      )}
-      {search && (
-        <Modal
-          label="Search jewellery"
-          className="boutique-search-overlay"
-          close={() => setSearch(false)}
-        >
-          <div className="boutique-overlay-top">
-            <span className="boutique-small-label">
-              The Saalankruta collection
-            </span>
-            <button
-              className="boutique-icon"
-              aria-label="Close search"
-              onClick={() => setSearch(false)}
-            >
-              <X aria-hidden="true" />
-            </button>
-          </div>
-          <h2>
-            Find your next <em>favourite.</em>
-          </h2>
-          <form className="boutique-search-form" action="/shop/">
-            <Search size={23} aria-hidden="true" />
-            <input
-              type="search"
-              name="q"
-              autoFocus
-              required
-              placeholder="Search necklaces, bangles, earrings…"
-              aria-label="Search jewellery"
-            />
-            <button type="submit" aria-label="Search products">
-              <ArrowRight size={23} aria-hidden="true" />
-            </button>
-          </form>
-          <div className="boutique-search-suggestions">
-            <span className="boutique-small-label">
-              Or explore a collection
-            </span>
-            <div>
-              {groups
-                .filter((item) => item.id !== "all")
-                .map((item) => (
-                  <Link key={item.id} to={item.href}>
-                    {item.name}
-                    <ArrowUpRight size={15} aria-hidden="true" />
+                {extras.map((category) => (
+                  <Link
+                    className="boutique-mobile-extra"
+                    key={category.slug}
+                    to={path(category.slug)}
+                  >
+                    {text(category.name)}
+                    <ArrowUpRight size={17} aria-hidden="true" />
                   </Link>
                 ))}
+              </nav>
+              <nav
+                className="boutique-mobile-personal"
+                aria-label="Your shopping"
+              >
+                <Link to="/account/">
+                  <UserRound size={19} aria-hidden="true" />
+                  <span>
+                    {customer ? "Your account" : "Sign in / Register"}
+                  </span>
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+                <Link to="/wishlist/">
+                  <Heart size={19} aria-hidden="true" />
+                  <span>Wishlist</span>
+                  <small>{wishlist.length}</small>
+                </Link>
+                <Link to="/cart/">
+                  <ShoppingBag size={19} aria-hidden="true" />
+                  <span>Shopping bag</span>
+                  <small>{count}</small>
+                </Link>
+              </nav>
+              <nav
+                className="boutique-mobile-care"
+                aria-label="About and customer care"
+              >
+                <Link to="/about/">Our story</Link>
+                <Link to="/contact/">Contact us</Link>
+                <Link to="/track-order/">Track your order</Link>
+                {policies.map((policy) => (
+                  <Link key={policy.slug} to={`/${policy.slug}/`}>
+                    {policy.name}
+                  </Link>
+                ))}
+              </nav>
+              <p className="boutique-mobile-signoff">
+                A little Saalankruta. Entirely you.
+              </p>
             </div>
           </div>
         </Modal>
       )}
+      {search && <JewellerySearch close={closeSearch} />}
     </>
   );
 }

@@ -10,6 +10,7 @@ import "./royal.css";
 import "./studio.css";
 import "./motion.css";
 import "./navigation.css";
+import "./boutique.css";
 async function mountStorefront() {
   const initial = await Promise.all([
     fetch(asset("/catalogue.json")).then((r) => r.json()),

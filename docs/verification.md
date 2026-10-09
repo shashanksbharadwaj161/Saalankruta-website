@@ -1,36 +1,73 @@
 # Verification record
 
-WordPress-hosted integration verified locally on 6 October 2026, with visual checks retained from 5 October and earlier commerce checks from 4 October. This is a development release, not a production launch certification.
+## Release status: 9 October 2026
 
-## Completed checks
+Saalankruta Coded Storefront **1.1.1** was installed through WordPress on **https://saalankruta.com**, replacing the already-active 1.0.0 theme. The new frontend is publicly visible on the existing Hostinger WordPress installation and uses the same WooCommerce catalogue, accounts, inventory and order store. The existing WooCommerce connection plugin remains in place. No database migration or backend subdomain was introduced.
 
-- The compiled frontend runs through PHP and an isolated WordPress installation, with theme-relative scripts, logos and media and ordinary root shopping URLs. Direct WordPress gateway HTTP checks pass for guest account isolation, protected orders, CSRF/origin rejection, private token stripping, cart persistence across requests, quantity changes, invalid coupon rejection and cart cleanup. The adapter now defers ordinary frontend cart initialization so Store API restores its token-backed session.
-- Theme route checks cover known pages, private route flags, traversal boundaries, unknown routes, original product-ID redirects and the WordPress sitemap redirect. HTTP checks verify customer no-cache/noindex responses and unknown-route 404s. WordPress canonical guessing is disabled for the coded theme; generated canonical tags remain authoritative.
-- The WordPress build packages 183 pre-rendered routes, public assets and the direct PHP adapter under `wp-content/themes/saalankruta`. Node runs only during development/CI. No backend subdomain or database migration is required. The browser-served PHP preview loads the original header logo; document width matches the actual 474px content viewport.
-- TypeScript and Vite production/SSR builds pass. The build pre-renders 183 routes with canonical URLs, sitemap and product structured data.
-- Ten catalogue/unit checks pass: 143 published identities, INR, legacy category mappings, descendants, combined search/filter/sort, quantity bounds, variation matching and unavailable prices. Legacy ordering fixtures preserve the original inventory mapping; the current homepage/menu presentation is reorganised at the owner's request.
-- The signed bridge integration suite passes against isolated WordPress and WooCommerce 8.8.7 on MariaDB and PHP 8.3. It checks unsigned requests, guest/account access, invalid login, wishlist deduplication, India address validation, cart changes, invalid coupons/products, test checkout, duplicate submission, order ownership and verified guest tracking.
-- The same-origin PHP gateway suite passes: CSRF, origin checks, operation allowlist, persistent HttpOnly/SameSite cookies, private token stripping, registration, login and logout.
-- PHP syntax checks pass for the gateway and plugin.
-- Browser checks cover homepage, collection filters, product gallery/zoom, mobile bag action and navigation. Search, stock and price filters combine without dropping the search term. Escape closes the image modal and restores focus.
-- The native sticky cinema replaces the previous GSAP pin. Live checks at 1920x910 show a 1776.8x658.4 frame with 64px gutters, sticky top y87 and controls ending at y901.9. At 1280x720 it is 1149.6x468, with controls ending at y711.5. A pendant-focused wide crop removes the large side gaps; the pendant remains visible. At 1280x500 the track automatically switches to ordinary flow, a complete 16:9 frame and zero spacer height. At 320x667 the full frame is 268.8x151.2 with shared 18px gutters. Document scrollWidth equals clientWidth in these checks. Homepage grids also use the header gutters on wide screens. Earlier collection/product/checkout checks cover 390, 646, 768 and 1024px widths; those commerce layouts were not widened.
-- The grouped desktop mega menu supports six tabs, arrow keys, Escape and focus return. Mobile category accordions and Escape focus return were checked. The new search dialog submits to the working catalogue search; changing price sorting retains the query. All existing 24 category routes remain accessible.
-- Only the cinema, caption and controls rest on a bounded 52svh native sticky track (200-520px). There are no film pin spacers, forced scroll corrections or wheel/touch interception. At 1280x720, forward scrolling from y240 to y480 seeks from 1.316402 to 5.233781 seconds while the film stays at y87; reverse scrolling to y240 restores 1.316402. At 1920x910, the frame holds at y87 and releases naturally into the page; the final frame is 5.475 seconds. The existing retained timestamp and coalesced seek implementation are preserved. The Gemini sparkle remains removed from an empty background region; the visible caption identifies imagined jewellery. Reduced motion removes sticky travel and retains the full poster. Collection animation refreshes are coalesced and guarded by real main-content dimension changes.
-- Mobile pause held the 5.475-second frame through offscreen video unloading and restored it at readyState 4 on returning to the top. The 320px collection shortcut settled at y100.125 below the 73.8px header. A fresh fragment reload initially failed because the browser jumped before React mounted; the general page navigation handler now aligns the fragment once after fonts settle, cancels on a user gesture, and cleans up its listeners/frame. A fresh reload at the actual 490px browser size then settled at y98.95 below the same header, with no horizontal overflow.
-- Live screenshot checks use a single rose surface connecting the stable heading, wide horizontal film, caption and shopping action. Shared page gutters, square collection frames, equal product frames, centered branding and consistent controls replace the earlier staggered composition. Product zoom closes with Escape and returns focus. Earlier mobile filters, account modes, order verification, cart and checkout fields were inspected without submitting account or order forms; the development-cart item was removed afterward. Logo navigation returns to the top immediately; ordinary hash links retain native anchor behaviour.
-- The owner authorised direct pixel removal of the crest's purple background after generative cleanup introduced artifacts. The source SHA-256 remains d768967cb2451663cc5edc0f153f88bf8f1a5088e79d64c33c3a5c3a1794915d. The new 2000x2000 transparent PNG has 3,583,175 fully transparent background pixels, 56,778 antialiased edge pixels and 360,047 opaque artwork pixels. Exact white/gold interior colours and geometry are preserved. Wine/rose composite proofs show no visible purple halo or filled ornament holes. About/footer use the uncropped transparent asset with a softly fading wine scrim; the 320px About crest is 268.8px square without horizontal overflow. The original script header logo stays intact.
-- ShaderGradient uses one continuous fixed waterPlane scene across homepage/story surfaces and behind the rose glass header. Browser DOM checks show one canvas. Background-only pixel density is now 0.7: at 1920x910 its drawing buffer is 1333x637, approximately half the former pixel area, without lowering photo/video resolution. The broad soft gradient was visually inspected; no measured FPS improvement is claimed. Passive RAF-coalesced pointer/touch/wheel input drives damped displacement and decaying inertia, with stable frequency/density and parent-held phase. Shopping routes disable the shader; homepage/story share pause controls. Header blur, edge reflections and interactive sheen preserve native controls. Fluid-route muted text and struck-through prices use darker wine for contrast. Physical touch and Safari remain unverified.
-- Independent source/design review addressed excess inherited mobile padding, joined kinetic words, long-word wrapping and the shared film/background pause state. At 320x740, all four homepage section headings and shopping links were measured individually inside the 305px content viewport; the heading rows stack below 400px so clipping cannot hide an oversized row. Desktop/mobile visual review is recorded separately from automated checks.
+The Hostinger full backup dated **8 October 2026, 06:42** was verified before replacement. The prior theme ZIP is retained privately for code rollback. Backup availability was checked; this release did not exercise a full production restore.
 
-## Limits and launch requirements
+The historical 6 October development record is preserved in `verification-2026-10-06.md`. Its inactive-theme and sticky-film descriptions refer to that earlier version and are superseded by this record.
 
-- Development test orders and accounts are isolated; no production orders, stock, uploads or database were modified.
-- A real payment provider is not connected. Production order submission is disabled. Success/failure/cancellation/callback and transaction/email tests remain required for the selected gateway.
-- Shipping fees, free-shipping threshold, return policy and verified WhatsApp details remain business inputs.
-- The new theme/plugin have not been installed or activated on production. Verify the Hostinger theme-folder mapping, a restorable current backup, TLS, production mail delivery and existing customer login behaviour before launch. The existing WooCommerce database and uploads stay in place; accounts do not need migration.
-- Mobile Safari, real Android devices, assistive technology and measured Core Web Vitals remain launch checks. The lazy ShaderGradient/Three.js chunk is approximately 293KB gzip; no performance score is promised.
-- Reduced-motion, reduced-transparency and WebGL-failure paths are implemented, but these preferences/failure modes have not yet been exercised across real devices.
-- The interaction driver uses the installed ShaderGradient mesh and uniform contract. Dependency upgrades require a regression check for fluid input, pause and rendering.
-- Independent design review was completed and its material findings addressed. The Impeccable detector ran once and returned style advisories, not an all-clear result; design tokens and documentation were reconciled manually.
+## Build and automated checks
 
-See deployment.md for production sequencing and rollback constraints.
+- TypeScript checks, PHP syntax checks and the WordPress production build pass. The build includes **183 pre-rendered routes** with theme-relative assets and ordinary root shopping URLs.
+- **22 automated tests pass**. Coverage includes real catalogue identities and category mappings; combined search, stock and price filters; variation and quantity boundaries; delayed address restoration without overwriting typed fields; serial wishlist updates and recovery; valid price ranges; shared API session bootstrap; safe session renewal after a pre-operation CSRF rejection; and no automatic checkout retries after ambiguous network failures.
+- Cart controls now honor WooCommerce `quantity_limits.minimum`, `maximum`, `multiple_of` and `editable`. Zero available stock and read-only quantities have regression tests.
+- Latest build sizes reported by Vite: CSS **104.16 kB / 21.13 kB gzip**; main JavaScript **364.46 kB / 112.06 kB gzip**; lazy shader chunk **1161.04 kB / 293.54 kB gzip**. These are bundle sizes, not measured loading times or Core Web Vitals.
+
+## Isolated commerce integration
+
+Current HTTP contract checks passed through the local PHP gateway on 8092 and the existing isolated WordPress/WooCommerce instance on 8091:
+
+- All **143 products** load. Anonymous `me` returns the unauthenticated shape; anonymous order access is rejected.
+- Registration, `me`, billing/shipping address objects, wishlist arrays, sequential wishlist updates and login restoration match the frontend contract.
+- Saving an address returns the updated customer; non-India addresses and invalid Indian PIN codes are rejected.
+- Cart add, persistent retrieval, quantity changes, product permalink/variation fields, server quantity limits, India shipping rates/selection, invalid coupon rejection, removal and empty-cart cleanup pass.
+- Authentication rotates the private session cookie; logout restores anonymous access boundaries. Private customer/cart tokens do not appear in gateway JSON.
+- Payment configuration has the expected shape. The pre-existing isolated `saal_test` gateway remained enabled; this run submitted no checkout and created no order.
+- The uniquely named test customer and its temporary cart contents were removed. Original local fixtures, stock, orders and configuration were preserved.
+
+Earlier isolated test-gateway checkout/idempotency checks are historical evidence in the archived record, not verification of a real payment gateway for this release.
+
+## Production connection checks
+
+Checks against the deployed theme's same-origin gateway passed:
+
+- The live catalogue contains **143 product IDs**, exactly matching the release snapshot.
+- Session cookies carry Secure and HttpOnly protections. Private cart/customer tokens are stripped from responses.
+- Guest order access returns **401**; invalid CSRF and origin checks return **403**.
+- Production checkout submission remains disabled and returns **409**.
+- A separate anonymous test cart added product **1876**, retained it across requests, rejected a read-only quantity change with **400**, rejected an invalid coupon with **400**, and returned to empty after removal.
+
+No production customer account, order or email mutations were performed. Product records and inventory were not edited. Production writes for verification were confined to the separate disposable guest cart/session. The deployment changed theme code, not the WooCommerce database or uploads.
+
+## Public routes and sitemap
+
+- Thirteen representative routes returned their expected status and metadata. Legacy `?p=1876` redirects permanently to its existing product URL. Private pages carry noindex and no-cache headers.
+- The final 1.1.1 follow-up confirmed the homepage returns 200, an unknown route returns 404, and the published JavaScript/CSS bytes exactly match the compiled release. Logos, crest, film, poster and fonts return 200.
+- The public `/sitemap.xml` returns 200 with XML containing **175 public URLs**, including exactly **143 product URLs**, with no missing products or duplicate URLs. `/wp-sitemap.xml` redirects once to this canonical sitemap.
+- Version 1.1.1 fixes WordPress's early sitemap redirect, which previously looped with the theme's canonical redirect. A targeted PHP regression checks the exact sitemap bypass and preservation of unrelated WordPress 404 handling. The corrected public sitemap's bytes match the release.
+
+## Browser and interaction checks
+
+- Local browser checks at actual **320, 390, 768 and 1440 px** viewport widths found no horizontal document overflow.
+- The redesigned film plays through native video decoding in ordinary document flow. Pause works; scrolling has no film hold, pin spacer or video seeking. Desktop scroll effects move the composition slightly without trapping page navigation.
+- Local navigation, catalogue search/filter interactions and guest wishlist controls were exercised. Product data and functional errors have explicit recovery states; checkout announces its unavailable payment state before address entry.
+- The public homepage was inspected at **1440 px** after replacement and visibly served the new interface with no broken images. All **24 category links** were available in the desktop mega menu; Escape closed it and search opened with correct autofocus.
+- Hosted search for **“bangles”** normalized to “bangle” and returned **18 results** in both the search interface and full result page.
+- Hosted **390 px** collection/product checks covered availability display and gallery zoom with Escape dismissal. At 390 px, the homepage's **375 px content viewport** had no horizontal overflow, the film played, native scrolling reached y844, playback paused offscreen, and the Bangles collection tab changed the displayed content.
+- The hosted account page loaded its sign-in form at **320 px**, with no horizontal overflow in the **305 px content viewport**. No storefront console errors were observed during these checks. Desktop/mobile screenshots were saved in the local release outputs.
+- Original product photography and script logo remain intact. The transparent crest is reused. The campaign film is labelled as imagined jewellery rather than an exact product representation.
+
+## Remaining checks and business inputs
+
+- A real payment gateway is not connected. Production ordering remains disabled. Gateway success, failure, cancellation, callbacks, duplicate submissions, stock reservations and order emails require end-to-end testing before ordering is enabled.
+- Shipping fee/free-delivery threshold, return eligibility/reporting windows and a verified WhatsApp contact remain business inputs.
+- All four policy configurations are still unpublished placeholders; approve and publish their business content before enabling orders.
+- Existing production customer login/password reset, outbound mail, real transactions and account/order mutations were not tested in production during this release.
+- Physical mobile Safari/Android devices, assistive technology and measured Core Web Vitals remain unverified. Browser viewport checks are not real-device performance certification.
+- Reduced-motion, reduced-transparency, data-saving and WebGL-failure paths are implemented; their full real-device/browser matrix remains unverified.
+- The source catalogue contains **69 products with neither a long nor short description**, **one product without an image**, and **three products with multiple images**. Missing specifications and photography remain content tasks; the interface does not fabricate them.
+- Analytics, consent tools and payment-provider JavaScript require explicit integration because the coded theme owns its HTML rather than inheriting the old theme's frontend scripts.
+
+See `deployment.md` for deployment paths, payment gates and rollback.
