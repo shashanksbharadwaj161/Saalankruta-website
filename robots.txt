@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /wp-content/themes/saalankruta/api/
+Sitemap: https://saalankruta.com/sitemap.xml

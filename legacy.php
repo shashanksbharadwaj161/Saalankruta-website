@@ -1,0 +1,2 @@
+<?php
+$map=json_decode(file_get_contents(__DIR__.'/catalogue.json'),true);$id=(int)($_GET['p']??0);foreach($map as $product){if($product['id']===$id){header('Location: /product/'.rawurlencode($product['slug']).'/',true,301);exit;}}http_response_code(404);readfile(__DIR__.'/index.html');
